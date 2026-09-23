@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from .. import db, security
-from ..ai import registry, stt, translate, tts
+from ..ai import face, registry, stt, translate, tts
 from ..ai.intent import embedder, router as intent_router
 from ..ai.intent.taxonomy import stats as taxonomy_stats
 from ..config import settings
@@ -32,6 +32,7 @@ def models() -> dict:
         "stt": stt.info(),
         "tts": tts.info(),
         "translate": translate.info(),
+        "face": face.info(),
         "taxonomy": taxonomy_stats(),
     }
 

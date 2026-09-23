@@ -305,7 +305,8 @@ _RAW: dict[str, dict] = {
                   "कुछ गड़बड़", "कोई समस्या", "सब सही",
                   "machine ok", "everything fine", "any problem", "health", "sab theek",
                   "sab kuch theek", "koi problem", "anything broken", "anything wrong",
-                  "something wrong", "broken"),
+                  "something wrong", "broken", "कैसे चल रहा", "कैसी चल रही", "kaise chal raha",
+                  "kaisi chal rahi"),
         examples="""
         मशीन में कोई खराबी है क्या
         मशीन ठीक चल रही है
@@ -545,12 +546,21 @@ _RAW: dict[str, dict] = {
         domain="training",
         sensors=(),
         description="A how-do-I question about operating the machine.",
-        keywords=("कैसे करूँ", "कैसे चलाऊँ", "कैसे उठाऊँ", "तरीका", "how do i", "how to", "procedure"),
+        keywords=("कैसे करूँ", "कैसे चलाऊँ", "कैसे उठाऊँ", "तरीका", "कैसे खोद", "खाई कैसे",
+                  "कैसे बंद", "बंद कैसे", "कैसे शुरू", "कैसे चालू", "कैसे भर", "कैसे लोड",
+                  "कैसे धकेल", "कैसे चढ़", "कैसे उतर", "सही तरीका", "कदम बताओ",
+                  "how do i", "how to", "procedure", "kaise chalau", "kaise karu", "steps"),
+        # "कैसे चल रहा है" asks how things are going, not how to operate something.
+        anti_keywords=("चल रहा", "चल रही", "chal raha", "chal rahi", "कैसी है", "kaisi hai"),
         examples="""
         खाई कैसे खोदूँ
         ट्रक में सही तरीके से कैसे लोड करूँ
         बकेट को कैसे भरना चाहिए
         मशीन शुरू करने का सही तरीका क्या है
+        मशीन कैसे बंद करें
+        मशीन कैसे शुरू करूँ
+        बकेट कैसे भरूँ
+        ब्लेड से मिट्टी कैसे धकेलूँ
         trench kaise khodu
         truck me load kaise karu
         how do I load a truck properly

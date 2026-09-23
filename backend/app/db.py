@@ -33,6 +33,8 @@ OPERATORS: list[dict] = _read_json("operators.json")
 MACHINES: list[dict] = _read_json("machines.json")
 TASKS_SEED: list[dict] = _read_json("tasks.json")
 TRAINING: dict = _read_json("training.json")
+GUIDES: list[dict] = _read_json("guides.json")
+GUIDES_BY_ID = {g["id"]: g for g in GUIDES}
 TASK_HISTORY: list[dict] = _read_json("task_history.json")
 TELEMETRY_HISTORY: list[dict] = _read_csv("telemetry_history.csv")
 
@@ -55,6 +57,26 @@ def operator(operator_id: str) -> dict | None:
 
 def machine(machine_id: str) -> dict | None:
     return MACHINES_BY_ID.get(machine_id)
+
+
+def guides_for(family: str | None) -> list[dict]:
+    """Guides that apply to a machine family, general ones first."""
+    rows = [g for g in GUIDES if family is None or family in g["families"]]
+    return sorted(rows, key=lambda g: (len(g["families"]) < 3, GUIDES.index(g)))
+
+
+def guide_for_task(family: str, task_type: str | None) -> dict:
+    """The single most useful guide for what the operator is doing right now."""
+    specific = {
+        ("excavator", "trench_excavation"): "excavator_trench",
+        ("excavator", "bulk_excavation"): "excavator_trench",
+        ("loader", "truck_loading"): "loader_truck",
+        ("loader", "stockpile_feeding"): "loader_truck",
+        ("dozer", "haul_road_maintenance"): "dozer_push",
+    }
+    by_family = {"excavator": "excavator_trench", "loader": "loader_truck", "dozer": "dozer_push"}
+    guide_id = specific.get((family, task_type or "")) or by_family.get(family, "pre_start")
+    return GUIDES_BY_ID[guide_id]
 
 
 def machines_for_operator(operator_id: str) -> list[dict]:

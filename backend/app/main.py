@@ -20,14 +20,14 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import REPO_DIR, settings
-from .routers import assistant, auth, machines, safety, system, tasks, training, voice
+from .routers import assistant, auth, face_auth, guides, machines, safety, system, tasks, training, voice
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
     datefmt="%H:%M:%S",
 )
-log = logging.getLogger("sahayak")
+log = logging.getLogger("saathi")
 
 app = FastAPI(
     title=settings.app_name,
@@ -62,7 +62,7 @@ async def key_error_handler(_: Request, exc: KeyError) -> JSONResponse:
     return JSONResponse(status_code=404, content={"detail": f"Not found: {exc}"})
 
 
-for module in (auth, tasks, machines, assistant, voice, safety, training, system):
+for module in (auth, face_auth, tasks, machines, assistant, voice, guides, safety, training, system):
     app.include_router(module.router)
 
 
@@ -127,7 +127,7 @@ def startup() -> None:
     if settings.eager_load:
         # Pay the load cost at boot so the first question of a demo is not the
         # slow one. Each of these degrades to a no-op if the model is absent.
-        from .ai import stt, translate, tts
+        from .ai import face, stt, translate, tts
         from .ai.intent import embedder as intent_embedder
 
         log.info("eager loading models ...")
@@ -136,5 +136,6 @@ def startup() -> None:
             ("stt", stt.available),
             ("tts", tts.available),
             ("translate", translate.available),
+            ("face", face.available),
         ):
             log.info("  %-10s %s", name, "ready" if warm() else "unavailable")

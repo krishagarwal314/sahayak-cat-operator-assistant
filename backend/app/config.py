@@ -115,6 +115,15 @@ class Settings:
     enable_tts = _flag("ENABLE_TTS", True)
     enable_translate = _flag("ENABLE_TRANSLATE", True)
     enable_embedder = _flag("ENABLE_EMBEDDER", True)
+    enable_face = _flag("ENABLE_FACE", True)
+
+    # ---- login ----
+    # Face login is the primary path. In a deployment, enrolling a face would be
+    # a supervisor action and tap-to-login would be switched off; for a demo,
+    # both are open so a new face can be enrolled on the spot.
+    face_match_threshold = float(_env("FACE_MATCH_THRESHOLD", "0.40"))
+    allow_face_enroll = _flag("ALLOW_FACE_ENROLL", True)
+    allow_tap_login = _flag("ALLOW_TAP_LOGIN", True)
     eager_load = _flag("EAGER_LOAD_MODELS", False)
 
     # ---- intent router thresholds ----

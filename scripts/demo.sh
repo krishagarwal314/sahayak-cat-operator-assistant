@@ -92,6 +92,7 @@ print('failed' if role in r['failed'] else ('loaded' if role in r['loaded'] else
 check_model stt   "speech to text (Hindi)"   yes
 check_model tts   "text to speech (Hindi)"   yes
 check_model embedder "semantic intent matching" no
+check_model face  "face login (camera)"      no
 
 command -v ffmpeg >/dev/null 2>&1 && ok "ffmpeg present (decodes browser audio)" \
   || bad "ffmpeg MISSING - voice input will fail. Run: apt-get install -y ffmpeg"

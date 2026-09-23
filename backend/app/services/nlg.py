@@ -530,22 +530,20 @@ def _training(ctx: dict) -> Reply:
 
 
 def _how_to(ctx: dict) -> Reply:
-    machine = db.machine(ctx["machine_id"])
-    family = machine["family"] if machine else "all"
+    machine = db.machine(ctx["machine_id"]) or {}
     current = db.active_task(ctx["operator_id"], ctx["machine_id"])
-    skill = current["task_type"] if current else None
-    modules = [m for m in db.TRAINING["modules"]
-               if m["family"] in (family, "all") and (skill is None or m["skill_tag"] == skill)]
-    modules = modules or [m for m in db.TRAINING["modules"] if m["family"] in (family, "all")]
-    top = modules[0] if modules else None
-    if not top:
-        return Reply(text_hi="इसके लिए अभी कोई मार्गदर्शन उपलब्ध नहीं है।",
-                     text_en="No guidance is available for that yet.")
+    guide = db.guide_for_task(machine.get("family", ""), current["task_type"] if current else None)
+    steps = len(guide["steps"])
     return Reply(
-        text_hi=f"इसके लिए यह देखें: {top['title_hi']}। {top['summary_hi']} यह {top['duration_min']} मिनट का है।",
-        text_en=f"Have a look at: {top['title_en']}. {top['summary_en']} It runs {top['duration_min']} minutes.",
-        card={"type": "training", "modules": modules[:3], "instructors": db.TRAINING["instructors"]},
-        data={"module": top},
+        text_hi=(f"{guide['title_hi']}। मैं आपको {steps} आसान कदमों में, तस्वीरों के साथ, धीरे धीरे "
+                 f"बताऊँगा। हर कदम के बाद आगे बढ़ने के लिए बटन दबाइए।"),
+        text_en=(f"{guide['title_en']}. I will walk you through {steps} simple steps with pictures, "
+                 f"slowly. Press the button after each step to continue."),
+        card={"type": "guide", "guide_id": guide["id"], "title_hi": guide["title_hi"],
+              "title_en": guide["title_en"], "icon": guide["icon"], "steps": steps,
+              "all": [{"id": g["id"], "title_hi": g["title_hi"], "title_en": g["title_en"], "icon": g["icon"]}
+                      for g in db.guides_for(machine.get("family"))]},
+        data={"guide_id": guide["id"]},
     )
 
 
