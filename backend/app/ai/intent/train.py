@@ -1,19 +1,19 @@
 """Fine-tune the intent classifier - resumable, built for Colab.
 
     python -m app.ai.intent.build_dataset
-    python -m app.ai.intent.train --out /content/drive/MyDrive/cat-saathi/intent
+    HF_TOKEN=hf_... python -m app.ai.intent.train --hub-repo cat-saathi-intent
 
-Colab can drop your runtime at any moment, so this trainer:
+Colab can drop your runtime at any moment, and Drive is often too full for
+multi-gigabyte checkpoints, so this trainer:
 
-  * saves a full checkpoint (model, optimizer, scheduler, position in the
-    data) to --out every few minutes and at the end of every epoch
-  * on start, finds that checkpoint and carries on from the exact batch where
-    it stopped - just run the same command again
-  * keeps the best model so far (by validation accuracy) in --out/best
-  * shows one progress bar for the whole run, with loss and accuracy
-
-When it finishes, --out/best is the model. Copy it into
-backend/models/intent-classifier and the API uses it automatically.
+  * trains on the local disk (--out) and checkpoints there every few minutes
+  * with --hub-repo, also backs up a light checkpoint (model + position, no
+    optimizer state) to a private Hugging Face repo, in the background
+  * on start, resumes from the local checkpoint - or, if the machine was
+    wiped, pulls the backup down from Hugging Face and resumes from that
+  * keeps the best model (by validation accuracy) and uploads it to the repo
+    when training ends - that is what Lightning downloads
+  * shows one progress bar for the whole run
 """
 
 from __future__ import annotations
@@ -50,6 +50,9 @@ def main() -> None:
                         help="extra loss weight for the focus intents")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--fresh", action="store_true", help="ignore any checkpoint and start over")
+    parser.add_argument("--hub-repo", default=None,
+                        help="private Hugging Face repo to back up checkpoints and publish the model, "
+                             "e.g. cat-saathi-intent (needs HF_TOKEN with write access)")
     args = parser.parse_args()
 
     import torch
@@ -80,6 +83,34 @@ def main() -> None:
     steps_per_epoch = math.ceil(len(train_rows) / args.batch_size)
     total_steps = steps_per_epoch * args.epochs
 
+    # ------------------------------------------------------------------ hub backup
+    hub = None
+    if args.hub_repo:
+        import os
+
+        from huggingface_hub import HfApi, snapshot_download
+
+        token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+        if not token:
+            raise SystemExit("--hub-repo needs HF_TOKEN set to a Hugging Face token with WRITE access")
+        api = HfApi(token=token)
+        repo_id = args.hub_repo if "/" in args.hub_repo else f"{api.whoami()['name']}/{args.hub_repo}"
+        api.create_repo(repo_id, private=True, exist_ok=True)
+        hub = {"api": api, "repo": repo_id, "token": token, "upload": None}
+        _log(f"> backing up to https://huggingface.co/{repo_id} (private)")
+
+        # The local disk was wiped (new Colab session) - pull the backup down.
+        if not args.fresh and not (last_dir / "trainer_state.json").exists():
+            try:
+                pulled = Path(snapshot_download(repo_id, token=token, allow_patterns=["checkpoint/*"],
+                                                local_dir=str(out / "hub-pull")))
+                if (pulled / "checkpoint" / "trainer_state.json").exists():
+                    shutil.rmtree(last_dir, ignore_errors=True)
+                    shutil.move(str(pulled / "checkpoint"), str(last_dir))
+                    _log("> restored the last checkpoint from Hugging Face")
+            except Exception as exc:  # noqa: BLE001 - no backup yet is normal on a first run
+                _log(f"  (no backup on the hub yet: {type(exc).__name__})")
+
     # ------------------------------------------------------------------ resume?
     state = None
     if not args.fresh and (last_dir / "trainer_state.json").exists():
@@ -107,7 +138,10 @@ def main() -> None:
 
     global_step, best_acc, history = 0, 0.0, []
     if state:
-        optimizer.load_state_dict(torch.load(last_dir / "optimizer.pt", map_location=device))
+        if (last_dir / "optimizer.pt").exists():
+            optimizer.load_state_dict(torch.load(last_dir / "optimizer.pt", map_location=device))
+        else:
+            _log("  (checkpoint came from the hub backup: optimizer state restarts, weights and position kept)")
         scheduler.load_state_dict(torch.load(last_dir / "scheduler.pt", map_location=device))
         global_step, best_acc, history = state["global_step"], state["best_acc"], state["history"]
         _log(f"> resuming from step {global_step}/{total_steps} ({global_step / total_steps:.0%}), "
@@ -168,7 +202,21 @@ def main() -> None:
         # Swap in atomically: a disconnect mid-save never corrupts the last good checkpoint.
         shutil.rmtree(last_dir, ignore_errors=True)
         tmp.rename(last_dir)
-        bar.write(f"  [saved] step {global_step}/{total_steps} ({global_step / total_steps:.0%}) - {reason}")
+        note = ""
+        if hub:
+            pending = hub["upload"]
+            if pending is None or pending.done():
+                # Upload from a frozen copy so the next save cannot change files mid-upload.
+                staging = out / "hub-staging"
+                shutil.rmtree(staging, ignore_errors=True)
+                shutil.copytree(last_dir, staging, ignore=shutil.ignore_patterns("optimizer.pt"))
+                hub["upload"] = hub["api"].upload_folder(
+                    folder_path=str(staging), repo_id=hub["repo"], path_in_repo="checkpoint",
+                    commit_message=f"checkpoint step {global_step}", run_as_future=True)
+                note = " + backing up to Hugging Face"
+            else:
+                note = " (previous backup still uploading)"
+        bar.write(f"  [saved] step {global_step}/{total_steps} ({global_step / total_steps:.0%}) - {reason}{note}")
 
     def save_best(acc: float, focus_acc: float, per: dict, epoch: int):
         shutil.rmtree(best_dir, ignore_errors=True)
@@ -234,6 +282,17 @@ def main() -> None:
     weakest = sorted(metrics["per_label_accuracy"].items(), key=lambda kv: kv[1])[:5]
     _log("weakest labels: " + ", ".join(f"{k} {v:.0%}" for k, v in weakest))
     _log(f"\nmodel ready at {best_dir}")
+
+    if hub:
+        if hub["upload"] is not None:
+            hub["upload"].result()            # let the last checkpoint backup finish
+        _log("uploading the finished model to Hugging Face ...")
+        hub["api"].upload_folder(folder_path=str(best_dir), repo_id=hub["repo"], commit_message="best model")
+        _log(f"published: https://huggingface.co/{hub['repo']}")
+        _log("\nOn Lightning, run from the repo root:")
+        _log(f"  HF_TOKEN=<your token> python -c \"from huggingface_hub import snapshot_download; "
+             f"snapshot_download('{hub['repo']}', local_dir='backend/models/intent-classifier', "
+             f"ignore_patterns=['checkpoint/*'])\"")
 
 
 if __name__ == "__main__":
