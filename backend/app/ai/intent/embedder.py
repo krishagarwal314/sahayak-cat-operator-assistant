@@ -174,4 +174,17 @@ def rank(text: str, *, allowed: set[str] | None = None, top_k: int = 3) -> list[
 
 
 def warm() -> bool:
-    return BANK.ensure()
+    """Prepare stage L2 fully: prototype bank *and* the encoder itself.
+
+    Building the bank normally loads the encoder as a side effect, but not when
+    the bank is restored from its disk cache - and then the encoder would not
+    load until the first question actually reached L2, which in a demo is the
+    first question the keyword layer does not recognise. Force it here so the
+    cost is paid at startup, where it belongs.
+    """
+    if not BANK.ensure():
+        return False
+    if embeddings.encode_one("warm up") is None:
+        log.warning("prototype bank ready but the encoder failed to load")
+        return False
+    return True
