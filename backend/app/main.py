@@ -14,11 +14,12 @@ from __future__ import annotations
 import logging
 import time
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
-from .config import settings
+from .config import REPO_DIR, settings
 from .routers import assistant, auth, machines, safety, system, tasks, training, voice
 
 logging.basicConfig(
@@ -65,8 +66,8 @@ for module in (auth, tasks, machines, assistant, voice, safety, training, system
     app.include_router(module.router)
 
 
-@app.get("/")
-def root() -> dict:
+@app.get("/api")
+def api_root() -> dict:
     return {
         "app": settings.app_name,
         "version": settings.version,
@@ -74,6 +75,43 @@ def root() -> dict:
         "health": "/api/system/health",
         "profile": settings.profile,
     }
+
+
+# ---------------------------------------------------------------------------
+# Serve the built frontend from the same origin as the API.
+#
+# This is what makes a remote demo practical: one port means one HTTPS tunnel,
+# and the microphone only works in a secure context. It also removes CORS from
+# the picture entirely. Falls back to API-only when the frontend has not been
+# built, so `npm run dev` on :5173 with its proxy still works for development.
+# ---------------------------------------------------------------------------
+FRONTEND_DIST = REPO_DIR / "frontend" / "dist"
+
+if (FRONTEND_DIST / "index.html").is_file():
+    if (FRONTEND_DIST / "assets").is_dir():
+        app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def spa(path: str) -> FileResponse:
+        """Static file if it exists, otherwise index.html so client routing works."""
+        if path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        candidate = (FRONTEND_DIST / path).resolve()
+        # Keep path traversal out: the resolved path must stay inside dist.
+        if path and candidate.is_file() and candidate.is_relative_to(FRONTEND_DIST.resolve()):
+            return FileResponse(candidate)
+        return FileResponse(FRONTEND_DIST / "index.html")
+
+    log.info("serving frontend from %s", FRONTEND_DIST)
+else:
+    @app.get("/", include_in_schema=False)
+    def no_frontend() -> dict:
+        return {
+            "app": settings.app_name,
+            "note": "Frontend not built. Run: cd frontend && npm run build",
+            "api": "/api",
+            "docs": "/docs",
+        }
 
 
 @app.on_event("startup")
@@ -87,7 +125,16 @@ def startup() -> None:
     log.info("  intent    : %s", settings.intent_model_dir)
 
     if settings.eager_load:
+        # Pay the load cost at boot so the first question of a demo is not the
+        # slow one. Each of these degrades to a no-op if the model is absent.
+        from .ai import stt, translate, tts
         from .ai.intent import embedder as intent_embedder
 
         log.info("eager loading models ...")
-        intent_embedder.warm()
+        for name, warm in (
+            ("embedder", intent_embedder.warm),
+            ("stt", stt.available),
+            ("tts", tts.available),
+            ("translate", translate.available),
+        ):
+            log.info("  %-10s %s", name, "ready" if warm() else "unavailable")

@@ -6,10 +6,12 @@ pydantic>=2.7
 PyJWT>=2.8
 
 # ---- ML runtime ----
-# Install torch first for your platform, e.g.
+# torch>=2.6 is REQUIRED, not just preferred: the Hindi Whisper checkpoint and
+# MuRIL ship pickle (.bin) weights with no safetensors copy, and transformers
+# refuses to torch.load those on older torch. Install for your platform first:
 #   CPU  : pip install torch --index-url https://download.pytorch.org/whl/cpu
 #   CUDA : pip install torch --index-url https://download.pytorch.org/whl/cu121
-torch>=2.2
+torch>=2.6
 transformers>=4.44
 sentencepiece>=0.2
 accelerate>=0.33

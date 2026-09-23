@@ -25,7 +25,27 @@ rather than magic.
 
 ---
 
-## Quick start
+## Run it in the cloud
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/krishagarwal314/sahayak-cat-operator-assistant/blob/main/notebooks/sahayak_colab.ipynb)
+
+```bash
+git clone https://github.com/krishagarwal314/sahayak-cat-operator-assistant.git
+cd sahayak-cat-operator-assistant
+bash scripts/setup_cloud.sh          # ffmpeg, deps, frontend build, models
+
+cd backend
+EAGER_LOAD_MODELS=1 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+The API serves the built frontend, so that is **one port and one URL**. Expose it
+over HTTPS — the microphone will not work otherwise. `docs/DEPLOY.md` covers
+Lightning AI (recommended for a scheduled demo, because its disk persists and
+the models download once), Colab, tunnelling, and a pre-demo checklist.
+
+---
+
+## Local development
 
 ```bash
 # 1. dependencies
