@@ -2,6 +2,7 @@ import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { api } from './lib/api'
 import { useSession } from './lib/session'
+import { homeFor } from './lib/viewMode'
 import { TopBar } from './components/Chrome'
 import { SimpleShell } from './components/Simple'
 import { Loading } from './components/ui'
@@ -25,10 +26,6 @@ function RequireAuth() {
   return <Outlet />
 }
 
-/** Where someone lands after login depends on who they are. */
-export function homeFor(role?: string) {
-  return role === 'manager' ? '/manager' : '/work'
-}
 
 function Home() {
   const { operator, ready } = useSession()

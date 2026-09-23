@@ -18,6 +18,7 @@ import { useVoice } from '../lib/useVoice'
 import type { AskResult } from '../lib/types'
 import { MachineIcon } from './MachineIcon'
 import { INTENT_ICON, Pictogram } from './Pictogram'
+import { setViewMode, VIEW_HOME } from '../lib/viewMode'
 
 // ------------------------------------------------------------------ status
 export const TONE = {
@@ -142,9 +143,11 @@ function TopBar() {
           className="h-11 rounded-xl border border-line bg-ink-800 px-3 text-sm font-bold text-slate-200">
           {lang === 'hi' ? 'EN' : 'हिं'}
         </button>
-        <button onClick={() => navigate('/pro/cockpit')} title="Supervisor view"
-          className="grid h-11 w-11 place-items-center rounded-xl border border-line bg-ink-800 text-mute hover:text-white">
-          <Pictogram name="chart" className="h-6 w-6" />
+        <button onClick={() => { setViewMode('standard'); navigate(VIEW_HOME.standard) }}
+          title={lang === 'hi' ? 'सामान्य दृश्य: लिखा हुआ, कम आवाज़' : 'Standard view: text, less voice'}
+          className="flex h-11 items-center gap-1.5 rounded-xl border border-line bg-ink-800 px-2.5 text-mute hover:text-white">
+          <Pictogram name="chart" className="h-5 w-5" />
+          <span className={`text-xs font-bold ${lang === 'hi' ? 'lang-hi leading-none' : ''}`}>{lang === 'hi' ? 'सामान्य' : 'Standard'}</span>
         </button>
         <button onClick={() => { logout(); navigate('/login') }} aria-label="sign out"
           className="grid h-11 w-11 place-items-center rounded-xl border border-line bg-ink-800 text-mute hover:text-white">

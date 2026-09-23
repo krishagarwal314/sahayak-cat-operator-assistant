@@ -86,7 +86,9 @@ export default function Insights() {
         ))}
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+      <MlModels ml={models.ml} speech={models.tts?.cache} />
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-2 [&>*]:min-w-0">
         {/* routing distribution */}
         <Panel title={t('insights.routing')}>
           {stages.length === 0 ? (
@@ -211,6 +213,57 @@ export default function Insights() {
       </div>
 
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
+    </div>
+  )
+}
+
+/** The three small prediction models, each against the simple rule it replaces. */
+function MlModels({ ml, speech }: { ml: any; speech?: any }) {
+  const { lang } = useLang()
+  const t = (hi: string, en: string) => (lang === 'hi' ? hi : en)
+  if (!ml) return null
+  const cards = [
+    ml.task_time && {
+      title: t('काम का समय', 'Task time'), model: t('ग्रेडिएंट बूस्टिंग', 'Gradient boosting'),
+      main: `${ml.task_time.mae_minutes} ${t('मिनट', 'min')}`, mainLabel: t('औसत गलती', 'average error'),
+      base: `${ml.task_time.baseline_mae_minutes} ${t('मिनट', 'min')}`,
+      note: t(`दायरे में असली समय: ${ml.task_time.range_coverage_pct}%`, `Real time inside the range: ${ml.task_time.range_coverage_pct}%`),
+    },
+    ml.safety_risk && {
+      title: t('अगले घंटे सुरक्षा ख़तरा', 'Safety risk, next hour'), model: t('ग्रेडिएंट बूस्टिंग', 'Gradient boosting'),
+      main: `${ml.safety_risk.auc}`, mainLabel: 'AUC', base: `${ml.safety_risk.baseline_auc}`,
+      note: t(`चेतावनी सही: ${ml.safety_risk['precision_at_0.4_pct']}%`, `Flags that were right: ${ml.safety_risk['precision_at_0.4_pct']}%`),
+    },
+    ml.unusual_use && {
+      title: t('मशीन का असामान्य इस्तेमाल', 'Unusual machine use'), model: t('आइसोलेशन फ़ॉरेस्ट', 'Isolation forest'),
+      main: `${ml.unusual_use.precision_pct}%`, mainLabel: t('सही पकड़', 'flags that were real'),
+      base: `${ml.unusual_use.baseline_precision_pct}%`,
+      note: t(`गड़बड़ी पकड़ी: ${ml.unusual_use.recall_pct}%`, `Misuse caught: ${ml.unusual_use.recall_pct}%`),
+    },
+  ].filter(Boolean) as { title: string; model: string; main: string; mainLabel: string; base: string; note: string }[]
+  return (
+    <div className="mt-5 grid gap-4 md:grid-cols-3">
+      {cards.map((c) => (
+        <div key={c.title} className="panel p-5">
+          <div className={`text-sm font-bold text-white ${lang === 'hi' ? 'lang-hi' : ''}`}>{c.title}</div>
+          <div className="label mt-0.5">{c.model} · {t('अनदेखे डेटा पर जाँचा', 'tested on unseen data')}</div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="font-mono text-3xl font-bold tabular-nums text-ok">{c.main}</span>
+            <span className="text-xs text-mute">{c.mainLabel}</span>
+          </div>
+          <div className="mt-1 text-xs text-mute">{t('सीधे नियम से', 'simple rule')}: <span className="font-mono text-slate-300">{c.base}</span></div>
+          <div className={`mt-2 text-xs text-slate-300 ${lang === 'hi' ? 'lang-hi' : ''}`}>{c.note}</div>
+        </div>
+      ))}
+      {speech && (
+        <div className="panel p-5 md:col-span-3">
+          <div className="text-sm font-bold text-white">{t('आवाज़ कैश', 'Speech cache')}</div>
+          <div className="mt-1 text-xs text-mute">
+            {t(`${speech.disk_items} आवाज़ें सहेजी (${speech.disk_mb} MB) · दोबारा इस्तेमाल: ${speech.hits + speech.disk_hits} · नई बनाई: ${speech.misses}`,
+               `${speech.disk_items} clips stored (${speech.disk_mb} MB) · reused: ${speech.hits + speech.disk_hits} · newly made: ${speech.misses}`)}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

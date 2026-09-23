@@ -95,7 +95,7 @@ const STRINGS = {
   'nav.training': { hi: 'प्रशिक्षण', en: 'Training' },
   'nav.insights': { hi: 'अंतर्दृष्टि', en: 'Insights' },
   'nav.logout': { hi: 'लॉग आउट', en: 'Sign out' },
-  'nav.simple': { hi: 'ऑपरेटर व्यू', en: 'Operator view' },
+  'nav.simple': { hi: 'सरल दृश्य', en: 'Simple view' },
 
   'common.loading': { hi: 'लोड हो रहा है…', en: 'Loading…' },
   'common.retry': { hi: 'दोबारा कोशिश करें', en: 'Retry' },

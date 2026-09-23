@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useLang } from '../lib/i18n'
+import { getViewMode, setViewMode, VIEW_HOME } from '../lib/viewMode'
 import { useSession } from '../lib/session'
 import { MachineIcon } from './MachineIcon'
 
@@ -61,8 +62,8 @@ export function TopBar({ machineName, machineFamily }: { machineName?: string; m
 
   return (
     <header className="sticky top-0 z-40 border-b border-line-soft bg-ink-900/85 backdrop-blur-lg">
-      <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-4 px-4 sm:px-6">
-        <button onClick={() => navigate('/work')} className="shrink-0" aria-label="home">
+      <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-2 px-3 sm:gap-4 sm:px-6">
+        <button onClick={() => navigate(VIEW_HOME[getViewMode()])} className="shrink-0" aria-label="home">
           <Logo />
         </button>
 
@@ -82,7 +83,7 @@ export function TopBar({ machineName, machineFamily }: { machineName?: string; m
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2.5">
           {machineName && (
             <button
               onClick={() => navigate('/pro/machines')}
@@ -95,8 +96,8 @@ export function TopBar({ machineName, machineFamily }: { machineName?: string; m
             </button>
           )}
 
-          <button onClick={() => navigate('/work')}
-            className="rounded-xl bg-cat px-3 py-1.5 text-xs font-bold text-ink-900 hover:bg-cat-dark">
+          <button onClick={() => { setViewMode('simple'); navigate(VIEW_HOME.simple) }}
+            className="whitespace-nowrap rounded-xl bg-cat px-2.5 py-1.5 text-xs font-bold text-ink-900 hover:bg-cat-dark">
             {t('nav.simple')}
           </button>
 
@@ -104,7 +105,7 @@ export function TopBar({ machineName, machineFamily }: { machineName?: string; m
 
           {operator && (
             <div className="flex items-center gap-2">
-              <div className="grid h-9 w-9 place-items-center rounded-full border border-line bg-ink-700
+              <div className="hidden h-9 w-9 place-items-center rounded-full border border-line bg-ink-700 sm:grid
                               text-[11px] font-bold text-cat">
                 {operator.avatar_initials}
               </div>
