@@ -419,3 +419,27 @@ export interface MachineAbout {
   video: { youtube_id: string; title: string; channel: string; about_hi: string; about_en: string }
   sections: { id: string; hi: string; en: string; speech_hi: string }[]
 }
+
+// ---------------------------------------------------------------- model signals
+export interface ModelTag { name: string; arch: string }
+
+export interface Signal {
+  key: string
+  icon: string
+  level: 'danger' | 'warn' | 'ok'
+  model: ModelTag
+  title: { hi: string; en: string }
+  value: { hi: string; en: string }
+  say: { hi: string; en: string }
+}
+
+export interface Signals {
+  machine: { id: string; model: string; name_en: string; name_hi: string; family: string }
+  operator: { id: string; name_en: string; name_hi: string; avatar_initials: string; experience_years: number } | null
+  models: ModelTag[]
+  score: number
+  headline: { hi: string; en: string }
+  signals: Signal[]
+  summary?: Partial<Record<'hi' | 'en', string>>
+  audio?: { base64: string; mime: string; sample_rate: number; duration_s: number; engine: string } | null
+}

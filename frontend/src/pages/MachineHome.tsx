@@ -71,7 +71,7 @@ function Picker() {
       <div className="flex items-center gap-3 rounded-2xl bg-ink-800 px-4 py-3">
         <Pictogram name="mic" className="h-8 w-8 shrink-0 text-cat" />
         <p className={`text-lg text-slate-200 ${lang === 'hi' ? 'lang-hi' : ''}`}>
-          {lang === 'hi' ? 'या नीचे माइक दबाकर बोलिए: “लोडर चुनो”' : 'Or hold the mic below and say: “select the loader”'}
+          {lang === 'hi' ? 'या नीचे माइक दबाकर बोलिए: “एक्सकेवेटर चुनो”' : 'Or tap the mic below and say: “select the excavator”'}
         </p>
       </div>
 
@@ -233,7 +233,7 @@ function MachineView({ onChange }: { onChange: () => void }) {
 
       {/* 2. two big actions */}
       <div className="grid grid-cols-2 gap-3">
-        <button onClick={() => { stop(); setShowVideo(true) }}
+        <button onClick={() => { stop(); setShowVideo(true) }} disabled={!detail.video}
           className="flex h-32 flex-col items-center justify-center gap-2 rounded-[28px] bg-crit text-white shadow-[0_12px_28px_-12px_rgba(255,90,95,0.9)] active:scale-95 disabled:opacity-40">
           <Pictogram name="play" className="h-14 w-14" />
           <span className={`text-xl font-extrabold ${lang === 'hi' ? 'lang-hi leading-none' : ''}`}>{t('वीडियो', 'Video')}</span>
@@ -276,7 +276,7 @@ function MachineView({ onChange }: { onChange: () => void }) {
         </button>
       </div>
 
-      {showVideo && <VideoOverlay video={detail.video} machineId={detail.machine.id} family={detail.machine.family} onClose={() => setShowVideo(false)} />}
+      {showVideo && detail.video && <VideoOverlay video={detail.video} onClose={() => setShowVideo(false)} />}
     </div>
   )
 }

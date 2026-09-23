@@ -109,9 +109,7 @@ export default function MachineAbout() {
         )}
         {step === 'video' && (
           <button onClick={() => { stop(); setVideo(true) }} className="group relative block w-full overflow-hidden rounded-3xl bg-black">
-            <span className="grid aspect-video w-full place-items-center bg-gradient-to-b from-cat/20 to-ink-900">
-              <MachineIcon family={about.machine.family} className="h-32 w-40 text-cat/60" />
-            </span>
+            <img src={`https://i.ytimg.com/vi/${about.video.youtube_id}/hqdefault.jpg`} alt="" className="aspect-video w-full object-cover opacity-80" />
             <span className="absolute inset-0 grid place-items-center">
               <span className="grid h-28 w-28 place-items-center rounded-full bg-crit text-white shadow-[0_10px_40px_rgba(0,0,0,0.6)] group-active:scale-95">
                 <Pictogram name="play" className="ml-1 h-16 w-16" />
@@ -134,7 +132,7 @@ export default function MachineAbout() {
         </button>
       </div>
 
-      {video && <VideoOverlay video={about.video} machineId={about.machine.id} family={about.machine.family} onClose={() => setVideo(false)} />}
+      {video && <VideoOverlay video={about.video} onClose={() => setVideo(false)} />}
     </div>
   )
 }

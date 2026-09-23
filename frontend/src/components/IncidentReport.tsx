@@ -25,7 +25,7 @@ export function IncidentReport({ machineId, onSent, compact = false }: { machine
   function openReport() {
     setSaid('')
     setState('idle')
-    void speak(t('क्या हुआ? बड़ा बटन दबाकर बताइए।', 'What happened? Hold the big button and tell me.'), lang, 'incident', true)
+    void speak(t('क्या हुआ? बड़ा बटन दबाकर बताइए।', 'What happened? Tap the big button and tell me.'), lang, 'incident', true)
   }
 
   async function startTalking() {
@@ -132,9 +132,10 @@ export function IncidentReport({ machineId, onSent, compact = false }: { machine
             ) : (
               <div className="flex flex-col items-center gap-4 pt-8">
                 <button
-                  onPointerDown={(e) => { e.preventDefault(); if (state === 'idle') void startTalking() }}
-                  onPointerUp={(e) => { e.preventDefault(); if (state === 'recording') void stopTalking() }}
-                  onPointerLeave={() => { if (state === 'recording' && recorder.current) void stopTalking() }}
+                  onClick={() => {
+                    if (state === 'idle') void startTalking()
+                    else if (state === 'recording') void stopTalking()
+                  }}
                   disabled={state === 'working'}
                   className={`relative grid h-40 w-40 place-items-center rounded-full transition-all
                     ${state === 'recording' ? 'scale-110 bg-crit text-white' : state === 'working' ? 'bg-ink-600 text-mute' : 'bg-cat text-ink-900'}`}>
@@ -144,7 +145,7 @@ export function IncidentReport({ machineId, onSent, compact = false }: { machine
                     : <Pictogram name="mic" className="relative h-20 w-20" />}
                 </button>
                 <p className={`text-center text-xl font-bold text-slate-200 ${lang === 'hi' ? 'lang-hi' : ''}`}>
-                  {state === 'recording' ? t('बोलिए… फिर छोड़ दीजिए', 'Speak… then let go') : t('दबाकर बताइए क्या हुआ', 'Hold and say what happened')}
+                  {state === 'recording' ? t('बोलिए… फिर दोबारा दबाइए', 'Speak… then tap again') : t('दबाइए और बताइए क्या हुआ', 'Tap and say what happened')}
                 </p>
               </div>
             )}

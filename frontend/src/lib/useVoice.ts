@@ -8,7 +8,7 @@ import type { AskResult, Lang } from './types'
 type State = 'idle' | 'recording' | 'processing'
 
 /**
- * Hold-to-talk.
+ * Tap to talk: start() on the first tap, stop() on the second.
  *
  * Scripted mode (the default for the demo): the mic animates as if listening,
  * then asks this screen's fixed question and returns the real answer. No
@@ -46,6 +46,11 @@ export function useVoice(opts: {
     setTranscript(question)
     setState('processing')
     try {
+      if (line.intent === 'USAGE_REPORT') {
+        onResult(await reportAsAnswer(machineId, lang, question))
+        setState('idle')
+        return
+      }
       const result = await api.ask({
         machine_id: machineId, text: question, intent: line.intent, language: lang, speak,
       })
@@ -123,4 +128,24 @@ export function useVoice(opts: {
   }, [])
 
   return { state, start, stop, cancel, transcript, usingBrowserStt: !backendSttRef.current, scripted }
+}
+
+/** The machine report, shaped like any other spoken answer. */
+async function reportAsAnswer(machineId: string, lang: Lang, question: string): Promise<AskResult> {
+  const report = await api.signals(machineId, true, lang)
+  const said = report.summary?.[lang] ?? report.headline[lang]
+  const text = { hi: lang === 'hi' ? said : report.headline.hi, en: lang === 'en' ? said : report.headline.en }
+  return {
+    machine_id: machineId, switched_machine: null, language: lang, total_ms: 0, at: new Date().toISOString(),
+    transcript: question, audio: report.audio ?? null, speech_fallback_text: said,
+    route: {
+      intent: 'USAGE_REPORT', confidence: 1, stage: 'quick_action', text: question, normalized: question,
+      script: lang === 'hi' ? 'devanagari' : 'latin', slots: {}, alternatives: [], unsupported_on_machine: false,
+      total_ms: 0, trace: [],
+    },
+    reply: {
+      text, speech: text, severity: report.signals.some((s) => s.level === 'danger') ? 'crit' : 'warn',
+      card: null, data: {}, followups: [],
+    },
+  }
 }

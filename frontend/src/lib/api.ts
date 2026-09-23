@@ -2,7 +2,7 @@ import type {
   AskResult, Briefing, MachineCard, MachineDetail, Operator,
   SafetyReport, Suggestion, Task, Telemetry, TrainingModule, Instructor,
   FaceStatus, FaceLoginResult, FaceEnrollResult, SessionResult, GuideSummary, Guide,
-  ManagerOptions, ManagerOverview, TaskDraft, Estimate, MachineAbout,
+  ManagerOptions, ManagerOverview, TaskDraft, Estimate, MachineAbout, Signals,
 } from './types'
 
 const TOKEN_KEY = 'sahayak.token'
@@ -168,6 +168,9 @@ export const api = {
   },
   tapLogin: (operatorId: string) =>
     request<SessionResult>('/api/auth/tap', { method: 'POST', ...json({ operator_id: operatorId }) }),
+
+  signals: (machineId: string, speak = false, language = 'hi') =>
+    request<Signals>(`/api/machines/${machineId}/signals?speak=${speak}&language=${language}`),
 
   // ---- guides ----
   guides: (machineId?: string) =>

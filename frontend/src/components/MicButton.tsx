@@ -51,13 +51,10 @@ export function MicButton({
   const dimension = size === 'lg' ? 'h-[76px] w-[76px]' : 'h-14 w-14'
   const iconSize = size === 'lg' ? 'h-7 w-7' : 'h-5 w-5'
 
-  const press = (event: React.PointerEvent) => {
-    event.preventDefault()
+  // Tap to start, tap again to finish: nothing is sent until the second tap.
+  const toggle = () => {
     if (state === 'idle') onStart()
-  }
-  const release = (event: React.PointerEvent) => {
-    event.preventDefault()
-    if (state === 'recording') onStop()
+    else if (state === 'recording') onStop()
   }
 
   return (
@@ -73,12 +70,9 @@ export function MicButton({
       )}
       <button
         type="button"
-        onPointerDown={press}
-        onPointerUp={release}
-        onPointerLeave={release}
-        onPointerCancel={release}
+        onClick={toggle}
         disabled={state === 'processing'}
-        aria-label={label ?? 'hold to talk'}
+        aria-label={label ?? 'tap to talk'}
         className={`relative grid ${dimension} place-items-center rounded-full transition-all duration-150
           ${state === 'recording'
             ? 'bg-crit text-white scale-105 shadow-[0_0_0_6px_rgba(255,90,95,0.18)]'

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from .. import db, security
 from ..schemas import SelectMachineRequest
-from ..services import anomaly, assistant, safety, site, telemetry, tasks as task_service
+from ..services import anomaly, assistant, safety, signals as signal_service, site, telemetry, tasks as task_service
 from ..services.speech_text import to_speech
 
 router = APIRouter(prefix="/api/machines", tags=["machines"])
@@ -120,6 +120,30 @@ def series(
         "sensor": sensor,
         "points": telemetry.recent_series(machine_id, sensor, points=points),
     }
+
+
+@router.get("/{machine_id}/signals")
+def signals(machine_id: str, speak: bool = False, language: str = "hi",
+            operator: dict = Depends(security.current_operator)) -> dict:
+    """What the small ML models say about this operator on this machine, one card each."""
+    if db.machine(machine_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown machine")
+    body = signal_service.signals(machine_id, operator["id"])
+    if speak:
+        # The mic on the dashboard reads the headline and the top warnings.
+        import base64
+
+        from ..ai import tts
+
+        lang = "en" if language == "en" else "hi"
+        top = [x["say"][lang] for x in body["signals"]
+               if x["level"] != "ok" and x["say"][lang] != body["headline"][lang]][:2]
+        body["summary"] = {lang: " ".join([body["headline"][lang], *top])}
+        speech = tts.synthesize(body["summary"][lang], language=lang)
+        body["audio"] = ({"base64": base64.b64encode(speech.wav).decode("ascii"), "mime": "audio/wav",
+                          "sample_rate": speech.sample_rate, "duration_s": speech.duration_s,
+                          "engine": speech.engine} if speech else None)
+    return body
 
 
 @router.get("/{machine_id}/anomalies")

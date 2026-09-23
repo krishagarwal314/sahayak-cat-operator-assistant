@@ -22,6 +22,7 @@ const SCRIPT: [RegExp, ScriptLine][] = [
   [/^\/machine\/about/, { intent: 'HOW_TO_OPERATE', question: { hi: 'यह मशीन कैसे चलाऊँ?', en: 'How do I operate this machine?' } }],
   [/^\/machine/, { intent: 'FUEL_STATUS', question: { hi: 'कितना ईंधन बचा है?', en: 'How much fuel is left?' } }],
   [/^\/work/, { intent: 'TASK_TODAY', question: { hi: 'आज मेरा काम क्या है?', en: 'What is my work today?' } }],
+  [/^\/usage/, { intent: 'USAGE_REPORT', question: { hi: 'आज मेरी मशीन की रिपोर्ट सुनाओ', en: 'Read me my machine report' } }],
   [/^\/learn/, { intent: 'TRAINING_HELP', question: { hi: 'मुझे ट्रेनिंग चाहिए।', en: 'I need training.' } }],
   [/^\/pro\/cockpit/, { intent: 'MACHINE_HEALTH', question: { hi: 'मशीन में कोई खराबी है क्या?', en: 'Is anything wrong with the machine?' } }],
 ]

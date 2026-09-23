@@ -63,7 +63,7 @@ const STRINGS = {
   'cockpit.eta': { hi: 'पूरा होने में', en: 'Time remaining' },
   'cockpit.progress': { hi: 'प्रगति', en: 'Progress' },
   'cockpit.emptyChat': { hi: 'नमस्ते! मशीन के बारे में कुछ भी पूछिए।', en: 'Ask me anything about this machine.' },
-  'cockpit.holdToTalk': { hi: 'बोलने के लिए दबाएँ', en: 'Hold to talk' },
+  'cockpit.holdToTalk': { hi: 'बोलने के लिए दबाएँ', en: 'Tap to talk' },
   'cockpit.releaseToSend': { hi: 'छोड़ें और भेजें', en: 'Release to send' },
   'cockpit.micDenied': { hi: 'माइक की अनुमति नहीं मिली', en: 'Microphone permission denied' },
   'cockpit.reportIncident': { hi: 'घटना दर्ज करें', en: 'Report incident' },

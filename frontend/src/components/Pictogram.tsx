@@ -388,6 +388,7 @@ export const TASK_ICON: Record<string, string> = {
 
 /** Which pictogram represents each assistant intent, for quick-question buttons. */
 export const INTENT_ICON: Record<string, string> = {
+  USAGE_REPORT: 'chart',
   FUEL_STATUS: 'fuel', MACHINE_HEALTH: 'wrench', TASK_TODAY: 'clipboard', TASK_NEXT: 'next',
   TASK_TIME_ESTIMATE: 'clock', TASK_PROGRESS: 'chart', HYDRAULIC_TEMP: 'hydraulic',
   ENGINE_TEMP: 'temp', TRANSMISSION_TEMP: 'gear', PAYLOAD_STATUS: 'payload', LOAD_CYCLES: 'cycles',

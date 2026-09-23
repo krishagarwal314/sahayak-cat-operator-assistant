@@ -11,6 +11,7 @@ import Work from './pages/Work'
 import MachineHome from './pages/MachineHome'
 import MachineAbout from './pages/MachineAbout'
 import Learn from './pages/Learn'
+import Usage from './pages/Usage'
 import GuidePlayer from './pages/GuidePlayer'
 import Shift from './pages/Shift'
 import MachineSelect from './pages/MachineSelect'
@@ -72,6 +73,7 @@ export default function App() {
           <Route path="/machine" element={<MachineHome />} />
           <Route path="/machine/about" element={<MachineAbout />} />
           <Route path="/learn" element={<Learn />} />
+          <Route path="/usage" element={<Usage />} />
           {/* Safety now lives on the machine page. */}
           <Route path="/safety" element={<Navigate to="/machine" replace />} />
         </Route>

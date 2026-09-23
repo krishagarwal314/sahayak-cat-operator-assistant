@@ -83,11 +83,11 @@ const TABS = [
   { to: '/work', icon: 'clipboard', hi: 'काम', en: 'Work' },
   { to: '/machine', icon: 'machine', hi: 'मशीन', en: 'Machine' },
   { to: '/learn', icon: 'book', hi: 'सीखें', en: 'Learn' },
+  { to: '/usage', icon: 'chart', hi: 'रिपोर्ट', en: 'Report' },
 ] as const
 
 function BottomNav({ family }: { family: string }) {
   const { lang } = useLang()
-  const { askIntent, busy } = useAnswer()
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line-soft bg-ink-900/95 backdrop-blur-lg"
          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
@@ -95,12 +95,7 @@ function BottomNav({ family }: { family: string }) {
         {TABS.slice(0, 2).map((tab) => <Tab key={tab.to} tab={tab} family={family} lang={lang} />)}
         <div />{/* space under the floating mic */}
         <Tab tab={TABS[2]} family={family} lang={lang} />
-        {/* Help: says out loud what you can ask, to get people talking to it. */}
-        <button onClick={() => void askIntent('HELP', lang === 'hi' ? 'मैं क्या पूछ सकता हूँ?' : 'What can I ask?')} disabled={busy}
-          className="flex flex-col items-center gap-1 py-2.5 text-mute transition-colors hover:text-slate-200">
-          <span className="grid h-11 w-14 place-items-center rounded-2xl"><Pictogram name="help" className="h-8 w-8" /></span>
-          <span className={`text-[13px] font-bold ${lang === 'hi' ? 'lang-hi leading-none' : ''}`}>{lang === 'hi' ? 'मदद' : 'Help'}</span>
-        </button>
+        <Tab tab={TABS[3]} family={family} lang={lang} />
       </div>
     </nav>
   )
@@ -178,7 +173,7 @@ export function useAnswer(): AnswerApi {
 // ------------------------------------------------------------------ voice dock
 /**
  * The mic lives on every screen, in the same place, bigger than anything else.
- * Hold it and talk. The answer comes back as a picture, a few big words, and
+ * Tap it, talk, tap again. The answer comes back as a picture, a few big words, and
  * the voice reading it.
  */
 function VoiceDock({ machineId, answer, setAnswer, error, setError, onResult }: {
@@ -270,24 +265,29 @@ function VoiceDock({ machineId, answer, setAnswer, error, setError, onResult }: 
           <span className="absolute inset-0 rounded-full bg-crit/40 animate-pulsering" />
         )}
         <button
-          onPointerDown={(e) => { e.preventDefault(); if (voice.state === 'idle') { stop(); setAnswer(null); void voice.start() } }}
-          onPointerUp={(e) => { e.preventDefault(); if (voice.state === 'recording') void voice.stop() }}
-          onPointerLeave={() => { if (voice.state === 'recording') void voice.stop() }}
+          // Tap to start listening, tap again when finished. Nothing is
+          // answered until the second tap.
+          onClick={() => {
+            if (voice.state === 'idle') { stop(); setAnswer(null); void voice.start() }
+            else if (voice.state === 'recording') void voice.stop()
+          }}
           disabled={voice.state === 'processing'}
-          aria-label={lang === 'hi' ? 'दबाकर बोलिए' : 'Hold to talk'}
+          aria-label={voice.state === 'recording' ? (lang === 'hi' ? 'बोलना पूरा' : 'Done speaking') : (lang === 'hi' ? 'बोलने के लिए दबाइए' : 'Tap to talk')}
           className={`relative grid h-[84px] w-[84px] place-items-center rounded-full border-4 border-ink-900 transition-all
             ${voice.state === 'recording' ? 'scale-110 bg-crit text-white'
               : voice.state === 'processing' ? 'bg-ink-600 text-mute'
               : 'bg-cat text-ink-900 shadow-[0_10px_30px_-8px_rgba(255,205,17,0.9)] active:scale-95'}`}>
           {voice.state === 'processing'
             ? <span className="h-9 w-9 animate-spin rounded-full border-4 border-mute/30 border-t-mute" />
-            : <Pictogram name="mic" className="h-11 w-11" />}
+            : voice.state === 'recording'
+              ? <span className="h-8 w-8 rounded-md bg-white" />
+              : <Pictogram name="mic" className="h-11 w-11" />}
         </button>
       </div>
       <p className={`mt-1 text-center text-[11px] font-bold ${voice.state === 'recording' ? 'text-crit' : 'text-mute'}`}>
-        {voice.state === 'recording' ? (lang === 'hi' ? 'बोलिए…' : 'Speak…')
-          : voice.state === 'processing' ? (lang === 'hi' ? 'सुन रहा हूँ' : 'Thinking')
-          : (lang === 'hi' ? 'दबाकर बोलें' : 'Hold & talk')}
+        {voice.state === 'recording' ? (lang === 'hi' ? 'बोलिए… फिर दबाइए' : 'Speak… then tap')
+          : voice.state === 'processing' ? (lang === 'hi' ? 'सोच रहा हूँ' : 'Thinking')
+          : (lang === 'hi' ? 'दबाकर बोलें' : 'Tap to talk')}
       </p>
     </div>
   </>)

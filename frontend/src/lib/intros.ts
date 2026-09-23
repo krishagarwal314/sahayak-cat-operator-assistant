@@ -30,6 +30,10 @@ export const PAGE_INTROS = {
     hi: 'यहाँ मशीन चलाना सीखिए। तस्वीर दबाइए, या नीचे टीचर का समय बुक कीजिए।',
     en: 'Learn to use the machine here. Tap a picture, or book a trainer below.',
   },
+  usage: {
+    hi: 'यह आपकी मशीन की रिपोर्ट है। लाल कार्ड पहले दबाकर सुनिए।',
+    en: 'This is your machine report. Tap the red cards first to hear them.',
+  },
   guide: {
     hi: 'हर कदम ध्यान से सुनिए। आगे जाने के लिए हरा बटन दबाइए।',
     en: 'Listen to each step. Press the green button to go on.',
