@@ -39,7 +39,10 @@ git -C "$ROOT" pull --quiet --ff-only 2>/dev/null && echo "  pulled latest" || e
 # OpenCV; install it rather than let the camera path silently switch off.
 if ! "$PY" -c "import cv2" >/dev/null 2>&1; then
   printf '\n%s\n' "$(bold '==> installing OpenCV for face login')"
-  "$PY" -m pip install -q opencv-python-headless || echo "  OpenCV install failed - tap-your-photo login still works"
+  # Pin both: an unpinned OpenCV pulls numpy 2, which breaks scipy and pandas
+  # builds that expect numpy 1.x - and with them every speech model.
+  "$PY" -m pip install -q "opencv-python-headless>=4.8,<4.12" "numpy>=1.26,<2" \
+    || echo "  OpenCV install failed - tap-your-photo login still works"
 fi
 
 # ---------------------------------------------------------------- frontend
