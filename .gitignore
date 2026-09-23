@@ -24,8 +24,10 @@ frontend/dist/
 .idea/
 *.swp
 
-# logs
+# logs and demo scratch output
 *.log
+server.log
+demo_test.wav
 
 # build artefacts
 frontend/tsconfig.tsbuildinfo
