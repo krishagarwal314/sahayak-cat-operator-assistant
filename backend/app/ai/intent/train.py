@@ -151,7 +151,8 @@ def main() -> None:
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad(set_to_none=True)
-            running += float(loss)
+            # .item() detaches; float(loss) on a grad-carrying tensor warns.
+            running += loss.item()
             if step % 20 == 0:
                 print(f"  epoch {epoch} step {step}/{len(train_loader)} loss {running / step:.4f}", flush=True)
 
