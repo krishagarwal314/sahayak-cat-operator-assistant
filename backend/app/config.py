@@ -137,6 +137,9 @@ class Settings:
     embed_accept = float(_env("EMBED_ACCEPT", "0.58"))
     embed_margin = float(_env("EMBED_MARGIN", "0.045"))
     classifier_accept = float(_env("CLASSIFIER_ACCEPT", "0.70"))
+    # Ask the trained classifier before the keyword rules. Off by default (rules
+    # are cheaper); switch on to put the trained model in front for a demo.
+    classifier_first = _flag("CLASSIFIER_FIRST", False)
 
     # ---- audio ----
     sample_rate = 16000

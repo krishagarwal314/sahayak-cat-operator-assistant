@@ -117,6 +117,23 @@ def route(
     # SWITCH_MACHINE carries a slot, so capture it regardless of which stage wins.
     family = match_machine_family(norm)
 
+    # ---------------------------------------------------------------- L3 first
+    # Optional: let the trained model answer before the rules. Only accepted
+    # when it is confident; otherwise the normal cascade runs as usual.
+    if settings.classifier_first and classifier.available():
+        t0 = time.perf_counter()
+        early = classifier.predict(norm)
+        early_ms = (time.perf_counter() - t0) * 1000
+        if early and early.intent != UNKNOWN and early.score >= settings.classifier_accept:
+            result.intent, result.confidence, result.stage = early.intent, early.score, "classifier"
+            result.alternatives = early.top_k[1:]
+            result.trace.append(TraceStep("L3:classifier", early.intent, early.score, True,
+                                          f"model first, margin {early.margin:.3f}", early_ms))
+            _finish(result, family, supported_intents, started)
+            return result
+        result.trace.append(TraceStep("L3:classifier", early.intent if early else None,
+                                      early.score if early else 0.0, False, "not confident, falling back", early_ms))
+
     # ---------------------------------------------------------------- L1
     t0 = time.perf_counter()
     rule_hits = rules.rank(text, allowed=None)

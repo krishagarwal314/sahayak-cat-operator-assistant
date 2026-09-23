@@ -99,6 +99,13 @@ TEST_SET: list[tuple[str, str]] = [
 
 
 def _predict(utterance: str, stage: str) -> str:
+    if stage == "classifier":
+        from . import classifier
+        from .normalize import normalize
+        hit = classifier.predict(normalize(utterance))
+        if hit is None:
+            raise SystemExit("No trained classifier found at backend/models/intent-classifier")
+        return hit.intent if hit.score >= 0.5 else UNKNOWN
     if stage == "rules":
         hit = rules.best(utterance)
         return hit.intent if hit and hit.score >= 0.62 else UNKNOWN
@@ -107,7 +114,7 @@ def _predict(utterance: str, stage: str) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate intent routing accuracy")
-    parser.add_argument("--stage", default="router", choices=["router", "rules"])
+    parser.add_argument("--stage", default="router", choices=["router", "rules", "classifier"])
     parser.add_argument("--verbose", action="store_true", help="print every case")
     args = parser.parse_args()
 
