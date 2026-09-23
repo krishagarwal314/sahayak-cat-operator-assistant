@@ -34,12 +34,23 @@ bad()  { FAIL+=("$1"); printf '  %s %s\n' "$(red   '[FAIL]')" "$1"; }
 printf '\n%s\n' "$(bold '==> updating')"
 git -C "$ROOT" pull --quiet --ff-only 2>/dev/null && echo "  pulled latest" || echo "  skipped (local changes or no network)"
 
-# ---------------------------------------------------------------- frontend
-if [[ ! -f "${ROOT}/frontend/dist/index.html" ]]; then
-  printf '\n%s\n' "$(bold '==> building frontend (was missing)')"
-  ( cd "${ROOT}/frontend" && { [[ -d node_modules ]] || npm install --no-audit --no-fund --silent; } && npm run build ) \
-    || echo "  frontend build failed - the API will still run"
+# ---------------------------------------------------------------- dependencies
+# Pulled code can need a package the box does not have yet. Face login needs
+# OpenCV; install it rather than let the camera path silently switch off.
+if ! "$PY" -c "import cv2" >/dev/null 2>&1; then
+  printf '\n%s\n' "$(bold '==> installing OpenCV for face login')"
+  "$PY" -m pip install -q opencv-python-headless || echo "  OpenCV install failed - tap-your-photo login still works"
 fi
+
+# ---------------------------------------------------------------- frontend
+# Always rebuild. Only building when dist/ was missing meant a pulled UI change
+# was never served - the old build just stayed in place. It takes seconds.
+printf '\n%s\n' "$(bold '==> building frontend')"
+( cd "${ROOT}/frontend" \
+  && { [[ -d node_modules && node_modules -nt package.json ]] || npm install --no-audit --no-fund --silent; } \
+  && npm run build >/dev/null ) \
+  && echo "  built" \
+  || echo "  frontend build failed - the API will still run"
 
 # ---------------------------------------------------------------- restart
 printf '\n%s\n' "$(bold "==> starting server on port ${PORT}")"
@@ -97,11 +108,15 @@ check_model face  "face login (camera)"      no
 command -v ffmpeg >/dev/null 2>&1 && ok "ffmpeg present (decodes browser audio)" \
   || bad "ffmpeg MISSING - voice input will fail. Run: apt-get install -y ffmpeg"
 
-TOKEN=$(curl -fsS -X POST "http://localhost:${PORT}/api/auth/login" \
+TOKEN=$(curl -fsS -X POST "http://localhost:${PORT}/api/auth/tap" \
   -H 'content-type: application/json' \
-  -d '{"username":"OP1001","password":"cat1234"}' 2>/dev/null \
+  -d '{"operator_id":"OP1001"}' 2>/dev/null \
   | "$PY" -c 'import sys,json; print(json.load(sys.stdin)["token"])' 2>/dev/null)
-[[ -n "${TOKEN:-}" ]] && ok "login works (OP1001 / cat1234)" || bad "login FAILED"
+[[ -n "${TOKEN:-}" ]] && ok "login works (tap your photo)" || bad "login FAILED"
+
+FACE_PEOPLE=$(curl -fsS "http://localhost:${PORT}/api/face/status" 2>/dev/null \
+  | "$PY" -c 'import sys,json; d=json.load(sys.stdin); print(sum(1 for p in d["people"] if p["face_samples"]))' 2>/dev/null)
+printf '  %s %s\n' "$(green '[--]')" "faces enrolled: ${FACE_PEOPLE:-0} (enrol on the login screen)"
 
 if [[ -n "${TOKEN:-}" ]]; then
   RESULT=$(curl -fsS -X POST "http://localhost:${PORT}/api/assistant/ask" \
@@ -145,8 +160,9 @@ $(bold 'NEXT:') expose port ${PORT} over HTTPS, then open it on your laptop.
    Lightning AI : Ports panel in the Studio -> add port ${PORT}
    anywhere else: cloudflared tunnel --url http://localhost:${PORT}
 
-   Sign in: OP1001 / cat1234
-   Then hold the mic and say:  कितना ईंधन बचा है
+   Tap the big yellow button, then look at the camera.
+   First time: tap your photo and hold still while it saves your face.
+   Then hold the yellow mic and say:  कितना ईंधन बचा है
 
    The mic ONLY works on the https:// URL, never on http:// or an IP.
 

@@ -1,4 +1,4 @@
-# Sahayak — Smart Operator Assistant for CAT Machines
+# CAT Saathi — Smart Operator Companion for CAT Machines
 
 A machine-aware, voice-first assistant for construction equipment operators. The
 operator signs in, hears the day's tasks read out in Hindi, picks a machine by
@@ -191,20 +191,23 @@ at any moment from the header.
 
 ---
 
+## The operator interface
+
+Built for operators who may not read comfortably. Pictures carry the meaning,
+with at most three big words underneath. Every screen speaks one short line
+when it opens, a single hold-to-talk mic sits in the same place on every
+screen, and status is always a colour *and* a symbol.
+
+- **Face login** — no passwords. YuNet + SFace (OpenCV Zoo) on CPU; enrol by
+  tapping your photo once. Tap-your-photo remains as a fallback.
+- **Picture guides** — step by step machine instructions, one step per screen,
+  spoken slowly, safety steps flagged red, optional hands-free advance.
+- **Speakable Hindi** — every reply is rewritten into pure spoken Devanagari
+  before synthesis, because the TTS model silently drops digits 5–9, all Latin
+  letters and all punctuation.
+
+The detailed dashboard and routing analytics live under `/pro`, one tap away.
+
 ## Demo flow
 
-1. **Login** → `OP1001 / cat1234`
-2. **Shift** → three tasks the manager wrote in English, shown and read aloud in
-   Hindi. Press the speaker to hear the full briefing.
-3. **Machines** → pick by tapping, or hold the mic and say *"लोडर चुनो"*.
-4. **Cockpit** → live telemetry, health score, safety panel, current task ETA.
-   Ask by voice: *"कितना ईंधन बचा है"*, *"मशीन में कोई खराबी है क्या"*,
-   *"यह काम कितनी देर में पूरा होगा"*. Expand the badge under any answer to see
-   which stage answered it and how long each took.
-5. **Switch machine** → ask the same fuel question on the loader (different
-   numbers), then ask about hydraulic temperature (politely refused — no such
-   sensor).
-6. **Insights** → the share of questions resolved at each stage, average routing
-   time, and an LLM call count of zero.
-
-See `docs/DEMO.md` for the script with the exact Hindi phrasings.
+See `docs/DEMO.md` for the six-minute script with exact Hindi phrasings.

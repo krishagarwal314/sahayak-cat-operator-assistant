@@ -53,8 +53,8 @@ echo
     printf '\n\033[32m%s\033[0m\n' "======================================================"
     printf '  \033[1mOPEN THIS ON YOUR LAPTOP:\033[0m\n'
     printf '    \033[36m%s\033[0m\n\n' "$url"
-    printf '  sign in : OP1001 / cat1234\n'
-    printf '  then say: कितना ईंधन बचा है\n'
+    printf '  then    : tap the yellow button, look at the camera\n'
+    printf '  say     : कितना ईंधन बचा है\n'
     printf '\033[32m%s\033[0m\n\n' "======================================================"
     echo "Leave this terminal open. Ctrl-C closes the tunnel."
   fi
