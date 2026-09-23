@@ -243,3 +243,7 @@ def main() -> None:
     size_mb = Path(archive).stat().st_size / 1e6
     _log(f"download this file: {archive}  ({size_mb:.0f} MB)")
     _log("then on the server:  unzip -o intent-classifier.zip -d backend/models/intent-classifier")
+
+
+if __name__ == "__main__":
+    main()
