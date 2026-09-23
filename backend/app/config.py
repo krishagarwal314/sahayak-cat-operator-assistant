@@ -49,8 +49,13 @@ PROFILES: dict[str, dict[str, str]] = {
         # VITS, 145M, streams instantly on CPU. Set TTS_MODEL=ai4bharat/IndicF5
         # for the higher fidelity (but heavier, reference-audio driven) option.
         "tts": "facebook/mms-tts-hin",
-        # 200M distilled IndicTrans2 - state of the art for en->hi at a small size.
-        "translate": "ai4bharat/indictrans2-en-indic-dist-200M",
+        # NLLB rather than the (better) IndicTrans2, for one blunt reason:
+        # IndicTrans2 ships trust_remote_code that imports transformers.onnx,
+        # which was removed in transformers v5, so it cannot load there at all.
+        # NLLB is native, ungated, and needs no extra toolkit.
+        # For IndicTrans2 quality, pin transformers<5 and set:
+        #   TRANSLATE_MODEL=ai4bharat/indictrans2-en-indic-dist-200M
+        "translate": "facebook/nllb-200-distilled-600M",
         "embedder": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
         # 238M, trained on 17 Indian languages incl. transliterated Hinglish.
         "intent_base": "google/muril-base-cased",
@@ -58,7 +63,8 @@ PROFILES: dict[str, dict[str, str]] = {
     "quality": {
         "stt": "vasista22/whisper-hindi-medium",
         "tts": "ai4bharat/IndicF5",
-        "translate": "ai4bharat/indictrans2-en-indic-1B",
+        # Same transformers v5 constraint as above - see the balanced profile.
+        "translate": "facebook/nllb-200-distilled-1.3B",
         "embedder": "intfloat/multilingual-e5-base",
         "intent_base": "google/muril-base-cased",
     },

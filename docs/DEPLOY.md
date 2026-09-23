@@ -154,7 +154,8 @@ curl -s -X POST localhost:8000/api/system/reset -H "Authorization: Bearer $TOKEN
 | STT returns 503 | Speech model not downloaded | `python scripts/download_models.py --only stt`. The UI falls back to browser recognition meanwhile. |
 | No audio comes back | TTS model missing | The browser synthesises instead, so the demo continues. Fix with `--only tts`. |
 | `ffmpeg not found` when you speak | Browser sends webm/opus, which needs ffmpeg to decode | `apt-get install -y ffmpeg` |
-| `translate unavailable -> gated repo` / 401 | IndicTrans2 requires accepting terms on the Hub | Accept at [the model page](https://huggingface.co/ai4bharat/indictrans2-en-indic-dist-200M), then `export HF_TOKEN=hf_...` and restart. Or `export TRANSLATE_MODEL=facebook/nllb-200-distilled-600M` (ungated). **Not demo-blocking** — task text falls back to the curated Hindi in `seed/tasks_hi.json`. |
+| `translate unavailable -> No module named 'transformers.onnx'` | IndicTrans2's remote code imports a module transformers v5 removed | Use the default `facebook/nllb-200-distilled-600M`, or pin `transformers<5`. **Not demo-blocking.** |
+| `translate unavailable -> gated repo` / 401 | IndicTrans2 requires accepting terms on the Hub | Accept at [the model page](https://huggingface.co/ai4bharat/indictrans2-en-indic-dist-200M) and `export HF_TOKEN=hf_...`. Easier: stay on the ungated NLLB default. **Not demo-blocking** — task text falls back to curated Hindi in `seed/tasks_hi.json`. |
 | Task text is in English, not Hindi | IndicTransToolkit missing *and* no curated Hindi for that task | `pip install IndicTransToolkit`. Only affects tasks you add yourself; the six seeded ones always have Hindi. |
 | First question takes 20 seconds | Models loading lazily on first use | Restart with `EAGER_LOAD_MODELS=1`, or press **Warm up models** on Insights |
 | Frontend shows the JSON API response | `frontend/dist` was never built | `cd frontend && npm run build`, then restart the server |

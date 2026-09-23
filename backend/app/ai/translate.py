@@ -51,11 +51,25 @@ def _family() -> str:
 
 def _load():
     import torch
+    import transformers
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
     device = registry.resolve_device()
     name = settings.translate_model
     family = _family()
+
+    if family == "indictrans2":
+        # IndicTrans2's remote code imports transformers.onnx, removed in v5.
+        # Fail with an explanation rather than a bare ModuleNotFoundError from
+        # inside someone else's downloaded module.
+        major = int(transformers.__version__.split(".")[0])
+        if major >= 5:
+            raise RuntimeError(
+                f"IndicTrans2 cannot load on transformers {transformers.__version__}: its "
+                "trust_remote_code imports transformers.onnx, which v5 removed. Either pin "
+                "transformers<5, or use the default TRANSLATE_MODEL="
+                "facebook/nllb-200-distilled-600M, which is native and needs no toolkit."
+            )
 
     kwargs = {"trust_remote_code": True} if family == "indictrans2" else {}
     tokenizer = AutoTokenizer.from_pretrained(name, **kwargs)

@@ -32,6 +32,7 @@ SIZES = {
     "facebook/mms-tts-hin": "0.15 GB",
     "ai4bharat/IndicF5": "1.4 GB",
     "facebook/nllb-200-distilled-600M": "2.5 GB",
+    "facebook/nllb-200-distilled-1.3B": "5.5 GB",
     "ai4bharat/indictrans2-en-indic-dist-200M": "0.9 GB",
     "ai4bharat/indictrans2-en-indic-1B": "4.5 GB",
     "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2": "0.5 GB",
@@ -42,6 +43,8 @@ SIZES = {
 
 # Repos that require accepting terms on the Hub before they can be downloaded.
 # Approval is normally instant, but it does need an account and a token.
+# Note these are no longer in any default profile: IndicTrans2 cannot load on
+# transformers v5 regardless of access. See app/config.py.
 GATED = {
     "ai4bharat/indictrans2-en-indic-dist-200M",
     "ai4bharat/indictrans2-en-indic-1B",

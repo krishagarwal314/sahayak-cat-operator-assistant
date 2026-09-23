@@ -82,7 +82,7 @@ being enormous — the whole default set is ~3.5 GB.
 |---|---|---|
 | Speech to text | `vasista22/whisper-hindi-small` | Hindi fine-tune; far better on Indian-accented Hindi than vanilla Whisper at the same 244M size |
 | Text to speech | `facebook/mms-tts-hin` | VITS, 145M, sub-second on CPU, needs no prompt audio |
-| Translation en→hi | `ai4bharat/indictrans2-en-indic-dist-200M` | State of the art for en→hi at 200M |
+| Translation en→hi | `facebook/nllb-200-distilled-600M` | Native to transformers, ungated, no extra toolkit. IndicTrans2 is better on en→hi but cannot load on transformers v5 — see below |
 | Intent embeddings | `paraphrase-multilingual-MiniLM-L12-v2` | Handles Devanagari, Hinglish and English in one space |
 | Intent classifier base | `google/muril-base-cased` | Trained on 17 Indian languages including transliterated Hinglish |
 
@@ -96,7 +96,20 @@ TTS_MODEL=ai4bharat/IndicF5 ./run.sh
 `IndicF5` gives noticeably better prosody but is a voice-cloning model: it needs
 a reference clip at `backend/assets/ref_audio/hindi_ref.wav` plus that clip's
 exact transcript in `INDICF5_REF_TEXT`. It also needs `pip install f5-tts`.
-IndicTrans2 needs `pip install IndicTransToolkit`.
+
+**On IndicTrans2**: it is the better en→hi model and was the original default,
+but its `trust_remote_code` imports `transformers.onnx`, which transformers v5
+removed — so it cannot load there at all, regardless of access. It is also a
+gated repo. To use it anyway, pin `transformers<5`, accept the terms on the Hub,
+and set `HF_TOKEN` plus:
+
+```bash
+pip install IndicTransToolkit
+export TRANSLATE_MODEL=ai4bharat/indictrans2-en-indic-dist-200M
+```
+
+Translation only affects manager-authored task text, and `seed/tasks_hi.json`
+carries curated Hindi for every seeded task, so none of this blocks a demo.
 
 ---
 
