@@ -298,7 +298,7 @@ export default function Shift() {
       </div>
 
       <div className="sticky bottom-4 mt-7">
-        <button onClick={() => navigate('/machines')} className="btn-primary w-full py-3.5 text-base shadow-glow">
+        <button onClick={() => navigate('/pro/machines')} className="btn-primary w-full py-3.5 text-base shadow-glow">
           {t('shift.continue')}
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2"
                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>

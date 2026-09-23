@@ -72,6 +72,8 @@ def enrich(task: dict, *, with_estimate: bool = True) -> dict:
     }
     progress = estimator.progress_of(task, task["machine_id"])
     out["progress"] = round(progress, 3)
+    # The picture guide that shows how to do this job.
+    out["guide_id"] = db.guide_for_task(out["machine"]["family"], task["task_type"])["id"]
     if with_estimate:
         out["estimate"] = estimator.estimate(task, progress=progress)
     return out

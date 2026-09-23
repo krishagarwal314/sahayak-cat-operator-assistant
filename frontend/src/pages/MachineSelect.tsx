@@ -24,7 +24,7 @@ export default function MachineSelect() {
 
   const open = useCallback(async (machineId: string) => {
     await selectMachine(machineId)
-    navigate('/cockpit')
+    navigate('/pro/cockpit')
   }, [navigate, selectMachine])
 
   const onVoiceResult = useCallback((result: AskResult) => {

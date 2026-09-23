@@ -3,7 +3,7 @@ import type { Lang } from './types'
 
 /** Every user-facing string in both languages. */
 const STRINGS = {
-  'app.name': { hi: 'सहायक', en: 'Sahayak' },
+  'app.name': { hi: 'कैट साथी', en: 'CAT Saathi' },
   'app.tagline': { hi: 'कैट मशीन ऑपरेटर सहायक', en: 'CAT Machine Operator Assistant' },
 
   'login.title': { hi: 'अपनी शिफ्ट शुरू करें', en: 'Start your shift' },
@@ -95,6 +95,7 @@ const STRINGS = {
   'nav.training': { hi: 'प्रशिक्षण', en: 'Training' },
   'nav.insights': { hi: 'अंतर्दृष्टि', en: 'Insights' },
   'nav.logout': { hi: 'लॉग आउट', en: 'Sign out' },
+  'nav.simple': { hi: 'ऑपरेटर व्यू', en: 'Operator view' },
 
   'common.loading': { hi: 'लोड हो रहा है…', en: 'Loading…' },
   'common.retry': { hi: 'दोबारा कोशिश करें', en: 'Retry' },

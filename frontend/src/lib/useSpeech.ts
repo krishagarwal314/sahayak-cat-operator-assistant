@@ -24,7 +24,7 @@ export function useSpeech() {
     setSpeakingId(null)
   }, [])
 
-  const speak = useCallback(async (text: string, lang: Lang, id?: string) => {
+  const speak = useCallback(async (text: string, lang: Lang, id?: string, slow = false) => {
     if (!text.trim()) return
     tokenRef.current += 1
     const token = tokenRef.current
@@ -32,7 +32,7 @@ export function useSpeech() {
     setSpeaking(true)
     setSpeakingId(id ?? null)
     try {
-      const blob = await api.speak(text, lang)
+      const blob = await api.speak(text, lang, slow)
       if (tokenRef.current !== token) return
       await playBlob(blob)
     } catch {

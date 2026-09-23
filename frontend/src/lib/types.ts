@@ -123,6 +123,7 @@ export interface Task {
   machine: { id: string; name_en: string; name_hi: string; model: string; family: string; icon: string }
   progress: number
   estimate?: Estimate
+  guide_id?: string
 }
 
 export interface Briefing {
@@ -238,4 +239,78 @@ export interface Instructor {
   languages: string[]
   rating: number
   slots: string[]
+}
+
+// ---------------------------------------------------------------- face login
+export interface FacePerson {
+  id: string
+  name_en: string
+  name_hi: string
+  role: string
+  avatar_initials: string
+  face_samples: number
+}
+
+export interface FaceStatus {
+  available: boolean
+  allow_enroll: boolean
+  allow_tap: boolean
+  people: FacePerson[]
+  samples_needed: number
+  max_samples: number
+}
+
+export interface SessionResult {
+  token: string
+  expires_in: number
+  operator: Operator
+  method: string
+  greeting: { hi: string; en: string }
+}
+
+export interface FaceLoginResult extends Partial<SessionResult> {
+  matched: boolean
+  status: 'match' | 'unknown' | 'no_face' | 'too_small' | 'unavailable'
+  operator_id: string | null
+  score: number
+  box: number[]
+  message: { hi: string; en: string }
+}
+
+export interface FaceEnrollResult {
+  saved: boolean
+  samples: number
+  status: string
+  box: number[]
+  message: { hi: string; en: string }
+}
+
+// ---------------------------------------------------------------- guides
+export interface GuideSummary {
+  id: string
+  icon: string
+  color: string
+  title_hi: string
+  title_en: string
+  steps: number
+  families: string[]
+}
+
+export interface GuideStep {
+  number: number
+  icon: string
+  title_hi: string
+  title_en: string
+  say_hi: string
+  say_en: string
+  speech_hi: string
+  speech_en: string
+  warning: boolean
+}
+
+export interface Guide extends Omit<GuideSummary, 'steps'> {
+  intro_hi: string
+  intro_en: string
+  intro_speech_hi: string
+  steps: GuideStep[]
 }

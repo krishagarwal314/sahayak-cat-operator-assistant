@@ -47,11 +47,11 @@ export function LanguageToggle({ className = '' }: { className?: string }) {
 }
 
 const NAV = [
-  { to: '/shift', key: 'nav.shift' },
-  { to: '/machines', key: 'nav.machines' },
-  { to: '/cockpit', key: 'nav.cockpit' },
-  { to: '/training', key: 'nav.training' },
-  { to: '/insights', key: 'nav.insights' },
+  { to: '/pro/shift', key: 'nav.shift' },
+  { to: '/pro/machines', key: 'nav.machines' },
+  { to: '/pro/cockpit', key: 'nav.cockpit' },
+  { to: '/pro/training', key: 'nav.training' },
+  { to: '/pro/insights', key: 'nav.insights' },
 ] as const
 
 export function TopBar({ machineName, machineFamily }: { machineName?: string; machineFamily?: string }) {
@@ -62,7 +62,7 @@ export function TopBar({ machineName, machineFamily }: { machineName?: string; m
   return (
     <header className="sticky top-0 z-40 border-b border-line-soft bg-ink-900/85 backdrop-blur-lg">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-4 px-4 sm:px-6">
-        <button onClick={() => navigate('/shift')} className="shrink-0" aria-label="home">
+        <button onClick={() => navigate('/work')} className="shrink-0" aria-label="home">
           <Logo />
         </button>
 
@@ -85,7 +85,7 @@ export function TopBar({ machineName, machineFamily }: { machineName?: string; m
         <div className="ml-auto flex items-center gap-2.5">
           {machineName && (
             <button
-              onClick={() => navigate('/machines')}
+              onClick={() => navigate('/pro/machines')}
               className="hidden items-center gap-2 rounded-xl border border-line bg-ink-800 px-3 py-1.5
                          text-xs font-semibold text-slate-200 transition-colors hover:border-cat/50 sm:flex"
               title={t('machines.title')}
@@ -94,6 +94,11 @@ export function TopBar({ machineName, machineFamily }: { machineName?: string; m
               <span className="max-w-[150px] truncate">{machineName}</span>
             </button>
           )}
+
+          <button onClick={() => navigate('/work')}
+            className="rounded-xl bg-cat px-3 py-1.5 text-xs font-bold text-ink-900 hover:bg-cat-dark">
+            {t('nav.simple')}
+          </button>
 
           <LanguageToggle />
 

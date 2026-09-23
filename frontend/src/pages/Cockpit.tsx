@@ -66,7 +66,7 @@ export default function Cockpit() {
 
   useEffect(() => {
     if (!machineId) {
-      navigate('/machines', { replace: true })
+      navigate('/pro/machines', { replace: true })
       return
     }
     load(machineId).catch((e) => setToast(String(e.message ?? e)))

@@ -9,6 +9,7 @@ interface SessionValue {
   machineId: string | null
   ready: boolean
   login: (username: string, password: string) => Promise<void>
+  adopt: (token: string, operator: Operator) => void
   logout: () => void
   selectMachine: (machineId: string) => Promise<void>
 }
@@ -52,6 +53,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setOperator(res.operator)
   }, [])
 
+  /** Take over a session issued by face or tap login. */
+  const adopt = useCallback((token: string, op: Operator) => {
+    setToken(token)
+    setOperator(op)
+  }, [])
+
   const logout = useCallback(() => {
     setToken(null)
     localStorage.removeItem(MACHINE_KEY)
@@ -66,8 +73,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ operator, machineId, ready, login, logout, selectMachine }),
-    [operator, machineId, ready, login, logout, selectMachine],
+    () => ({ operator, machineId, ready, login, adopt, logout, selectMachine }),
+    [operator, machineId, ready, login, adopt, logout, selectMachine],
   )
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
 }

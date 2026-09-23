@@ -1,6 +1,7 @@
 import type {
   AskResult, Briefing, MachineCard, MachineDetail, Operator,
   SafetyReport, Suggestion, Task, Telemetry, TrainingModule, Instructor,
+  FaceStatus, FaceLoginResult, FaceEnrollResult, SessionResult, GuideSummary, Guide,
 } from './types'
 
 const TOKEN_KEY = 'sahayak.token'
@@ -77,7 +78,7 @@ export const api = {
       `/api/machines/${machineId}/series/${sensor}?points=${points}`),
 
   // ---- assistant ----
-  ask: (body: { machine_id: string; text?: string; intent?: string; language: string; speak?: boolean }) =>
+  ask: (body: { machine_id: string; text?: string; intent?: string; language: string; speak?: boolean; slow?: boolean }) =>
     request<AskResult>('/api/assistant/ask', { method: 'POST', ...json(body) }),
   suggestions: (machineId: string) =>
     request<Suggestion[]>(`/api/assistant/suggestions?machine_id=${machineId}`),
@@ -104,8 +105,8 @@ export const api = {
     form.append('language', language)
     return request<{ text: string; latency_ms: number }>('/api/voice/transcribe', { method: 'POST', body: form })
   },
-  speak: (text: string, language: string) =>
-    request<Blob>('/api/voice/speak', { method: 'POST', ...json({ text, language }) }),
+  speak: (text: string, language: string, slow = false) =>
+    request<Blob>('/api/voice/speak', { method: 'POST', ...json({ text, language, slow }) }),
 
   // ---- safety ----
   safety: (machineId: string) => request<SafetyReport>(`/api/safety/${machineId}`),
@@ -122,6 +123,27 @@ export const api = {
   book: (instructorId: string, slot: string, moduleId?: string) =>
     request<{ booking: any; confirmation: { hi: string; en: string } }>(
       '/api/training/book', { method: 'POST', ...json({ instructor_id: instructorId, slot, module_id: moduleId }) }),
+
+  // ---- face login ----
+  faceStatus: () => request<FaceStatus>('/api/face/status'),
+  faceLogin: (image: Blob) => {
+    const form = new FormData()
+    form.append('image', image, 'face.jpg')
+    return request<FaceLoginResult>('/api/face/login', { method: 'POST', body: form })
+  },
+  faceEnroll: (operatorId: string, image: Blob) => {
+    const form = new FormData()
+    form.append('operator_id', operatorId)
+    form.append('image', image, 'face.jpg')
+    return request<FaceEnrollResult>('/api/face/enroll', { method: 'POST', body: form })
+  },
+  tapLogin: (operatorId: string) =>
+    request<SessionResult>('/api/auth/tap', { method: 'POST', ...json({ operator_id: operatorId }) }),
+
+  // ---- guides ----
+  guides: (machineId?: string) =>
+    request<GuideSummary[]>(`/api/guides${machineId ? `?machine_id=${machineId}` : ''}`),
+  guide: (guideId: string) => request<Guide>(`/api/guides/${guideId}`),
 
   // ---- system ----
   systemModels: () => request<any>('/api/system/models'),
