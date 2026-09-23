@@ -233,7 +233,7 @@ function MachineView({ onChange }: { onChange: () => void }) {
 
       {/* 2. two big actions */}
       <div className="grid grid-cols-2 gap-3">
-        <button onClick={() => { stop(); setShowVideo(true) }} disabled={!detail.video}
+        <button onClick={() => { stop(); setShowVideo(true) }}
           className="flex h-32 flex-col items-center justify-center gap-2 rounded-[28px] bg-crit text-white shadow-[0_12px_28px_-12px_rgba(255,90,95,0.9)] active:scale-95 disabled:opacity-40">
           <Pictogram name="play" className="h-14 w-14" />
           <span className={`text-xl font-extrabold ${lang === 'hi' ? 'lang-hi leading-none' : ''}`}>{t('वीडियो', 'Video')}</span>
@@ -276,7 +276,7 @@ function MachineView({ onChange }: { onChange: () => void }) {
         </button>
       </div>
 
-      {showVideo && detail.video && <VideoOverlay video={detail.video} onClose={() => setShowVideo(false)} />}
+      {showVideo && <VideoOverlay video={detail.video} machineId={detail.machine.id} family={detail.machine.family} onClose={() => setShowVideo(false)} />}
     </div>
   )
 }

@@ -15,9 +15,12 @@ Web Speech API, so the demo still speaks.
 
 from __future__ import annotations
 
+import hashlib
 import io
 import logging
+import threading
 import time
+from collections import OrderedDict
 from dataclasses import dataclass
 
 from ..config import settings
@@ -38,6 +41,75 @@ class Speech:
     latency_ms: float
     engine: str
     model: str
+    cached: bool = False
+
+
+# --------------------------------------------------------------------------
+# cache
+# --------------------------------------------------------------------------
+# The same sentences are spoken again and again: page intros, guide steps,
+# safety rules, "fuel is at ..." for a machine that has not moved. Synthesis
+# is deterministic for a given text, voice and speed, so each clip is made
+# once, kept in memory, and written to disk so it survives a restart.
+_MEMORY: OrderedDict[str, Speech] = OrderedDict()
+_LOCK = threading.Lock()
+_STATS = {"hits": 0, "disk_hits": 0, "misses": 0}
+
+
+def _cache_key(text: str, language: str, slow: bool) -> str:
+    rate = settings.tts_slow_rate if slow else settings.tts_speaking_rate
+    gap = settings.tts_slow_sentence_gap if slow else settings.tts_sentence_gap
+    raw = f"{_model_for(language)}|{language}|{rate}|{gap}|{text}"
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()
+
+
+def _remember(key: str, speech: Speech) -> None:
+    with _LOCK:
+        _MEMORY[key] = speech
+        _MEMORY.move_to_end(key)
+        while len(_MEMORY) > settings.tts_cache_items:
+            _MEMORY.popitem(last=False)
+
+
+def _cached(key: str, language: str) -> Speech | None:
+    with _LOCK:
+        hit = _MEMORY.get(key)
+        if hit is not None:
+            _MEMORY.move_to_end(key)
+            _STATS["hits"] += 1
+            return hit
+    path = settings.tts_cache_dir / f"{key}.wav"
+    if not path.exists():
+        return None
+    try:
+        import soundfile as sf
+
+        wav = path.read_bytes()
+        info_ = sf.info(io.BytesIO(wav))
+        speech = Speech(wav=wav, sample_rate=info_.samplerate, duration_s=round(info_.duration, 2),
+                        latency_ms=0.0, engine="cache", model=_model_for(language), cached=True)
+    except Exception:  # noqa: BLE001 - a bad file is just a miss
+        return None
+    _STATS["disk_hits"] += 1
+    _remember(key, speech)
+    return speech
+
+
+def _store(key: str, speech: Speech) -> None:
+    _remember(key, Speech(**{**speech.__dict__, "cached": True, "latency_ms": 0.0}))
+    try:
+        settings.tts_cache_dir.mkdir(parents=True, exist_ok=True)
+        tmp = settings.tts_cache_dir / f"{key}.tmp"
+        tmp.write_bytes(speech.wav)
+        tmp.replace(settings.tts_cache_dir / f"{key}.wav")
+    except OSError as exc:
+        log.debug("tts cache write failed: %s", exc)
+
+
+def cache_stats() -> dict:
+    files = list(settings.tts_cache_dir.glob("*.wav")) if settings.tts_cache_dir.exists() else []
+    return {**_STATS, "memory_items": len(_MEMORY), "disk_items": len(files),
+            "disk_mb": round(sum(f.stat().st_size for f in files) / 1e6, 1)}
 
 
 def _is_indicf5() -> bool:
@@ -174,9 +246,14 @@ def synthesize(text: str, *, language: str = "hi", slow: bool = False) -> Speech
     text = prepare(text, language=language, slow=slow)
     if not text or not settings.enable_tts:
         return None
+    key = _cache_key(text, language, slow)
+    hit = _cached(key, language)
+    if hit is not None:
+        return hit
     bundle = registry.get(_KEYS[language], _loader(language))
     if bundle is None:
         return None
+    _STATS["misses"] += 1
 
     rate = settings.tts_slow_rate if slow else settings.tts_speaking_rate
     gap_s = settings.tts_slow_sentence_gap if slow else settings.tts_sentence_gap
@@ -206,7 +283,7 @@ def synthesize(text: str, *, language: str = "hi", slow: bool = False) -> Speech
         return None
 
     wav = _to_wav_bytes(audio, sample_rate)
-    return Speech(
+    speech = Speech(
         wav=wav,
         sample_rate=sample_rate,
         duration_s=round(len(audio) / sample_rate, 2) if sample_rate else 0.0,
@@ -214,6 +291,18 @@ def synthesize(text: str, *, language: str = "hi", slow: bool = False) -> Speech
         engine=bundle["engine"],
         model=_model_for(language),
     )
+    _store(key, speech)
+    return speech
+
+
+def warm(texts: list[tuple[str, str, bool]]) -> int:
+    """Synthesise (text, language, slow) triples ahead of time; returns how many were new."""
+    made = 0
+    for text, language, slow in texts:
+        before = _STATS["misses"]
+        synthesize(text, language=language, slow=slow)
+        made += _STATS["misses"] - before
+    return made
 
 
 def info() -> dict:
@@ -224,4 +313,5 @@ def info() -> dict:
         "enabled": settings.enable_tts,
         "needs_reference_audio": _is_indicf5(),
         "reference_audio": settings.indicf5_ref_audio if _is_indicf5() else None,
+        "cache": cache_stats(),
     }

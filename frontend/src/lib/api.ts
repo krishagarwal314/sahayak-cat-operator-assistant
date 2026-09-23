@@ -50,6 +50,34 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 const json = (body: unknown) => ({ body: JSON.stringify(body) })
 
+// ---- spoken clips ----
+// "Repeat" and going back a step replay the same sentence, and a guide's next
+// step is fetched while the current one plays. Clips are kept in memory (most
+// recent 80) and a request already on its way is shared, never sent twice.
+const SPEECH_KEEP = 80
+const speechClips = new Map<string, Promise<Blob>>()
+
+function cachedSpeech(text: string, language: string, slow: boolean): Promise<Blob> {
+  const key = `${language}|${slow ? 1 : 0}|${text}`
+  const hit = speechClips.get(key)
+  if (hit) {
+    speechClips.delete(key)          // move to the newest end
+    speechClips.set(key, hit)
+    return hit
+  }
+  const pending = request<Blob>('/api/voice/speak', { method: 'POST', ...json({ text, language, slow }) })
+  // A failure is not remembered, so the next try asks the server again.
+  pending.catch(() => speechClips.delete(key))
+  speechClips.set(key, pending)
+  while (speechClips.size > SPEECH_KEEP) speechClips.delete(speechClips.keys().next().value as string)
+  return pending
+}
+
+/** Fetch a clip ahead of time so it plays the moment it is needed. */
+export function prefetchSpeech(text: string, language: string, slow = false): void {
+  if (text.trim()) cachedSpeech(text, language, slow).catch(() => undefined)
+}
+
 export const api = {
   // ---- auth ----
   login: (username: string, password: string) =>
@@ -107,8 +135,7 @@ export const api = {
     form.append('language', language)
     return request<{ text: string; latency_ms: number }>('/api/voice/transcribe', { method: 'POST', body: form })
   },
-  speak: (text: string, language: string, slow = false) =>
-    request<Blob>('/api/voice/speak', { method: 'POST', ...json({ text, language, slow }) }),
+  speak: (text: string, language: string, slow = false) => cachedSpeech(text, language, slow),
 
   // ---- safety ----
   safety: (machineId: string) => request<SafetyReport>(`/api/safety/${machineId}`),

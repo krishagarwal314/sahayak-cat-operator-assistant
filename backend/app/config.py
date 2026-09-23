@@ -155,6 +155,12 @@ class Settings:
     # Silence inserted between sentences, in seconds.
     tts_sentence_gap = float(_env("TTS_SENTENCE_GAP", "0.22"))
     tts_slow_sentence_gap = float(_env("TTS_SLOW_SENTENCE_GAP", "0.4"))
+    # Spoken clips are cached in memory and on disk (see ai/tts.py).
+    tts_cache_dir = Path(_env("TTS_CACHE_DIR", str(BACKEND_DIR / "cache" / "tts")))
+    tts_cache_items = int(_env("TTS_CACHE_ITEMS", "400"))
+    # At startup, speak every guide step, safety rule and page intro once in
+    # the background so the first tap on them is instant.
+    warm_tts_cache = _flag("WARM_TTS_CACHE", True)
     # English voice used if espeak / phonemizer is not installed.
     tts_model_en_fallback = _env("TTS_MODEL_EN_FALLBACK", "facebook/mms-tts-eng")
     indicf5_ref_audio = _env("INDICF5_REF_AUDIO", str(BACKEND_DIR / "assets" / "ref_audio" / "hindi_ref.wav"))

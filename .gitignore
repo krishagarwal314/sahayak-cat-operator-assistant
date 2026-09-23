@@ -35,3 +35,4 @@ frontend/tsconfig.tsbuildinfo
 
 # trained model archives - never commit these
 *.zip
+backend/cache/

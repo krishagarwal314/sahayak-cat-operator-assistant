@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { api } from '../lib/api'
+import { api, prefetchSpeech } from '../lib/api'
 import { useLang } from '../lib/i18n'
 import { useVoiceOut } from '../lib/speechContext'
 import type { Guide } from '../lib/types'
@@ -46,6 +46,7 @@ export default function GuidePlayer() {
   useEffect(() => {
     if (!guide) return
     const run = ++runRef.current
+    if (index + 1 <= guide.steps.length) prefetchSpeech(textFor(index + 1), lang, true)
     const timer = window.setTimeout(async () => {
       await speak(textFor(index), lang, `guide-${index}`, true)
       if (auto && run === runRef.current && index >= 0 && index < guide.steps.length) {

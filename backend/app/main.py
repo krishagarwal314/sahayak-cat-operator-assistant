@@ -114,6 +114,30 @@ else:
         }
 
 
+def _warm_speech() -> None:
+    """Speak every fixed sentence once so its first tap is instant, not a synthesis wait."""
+    from . import db
+    from .ai import tts
+    from .routers import guides, machines
+
+    texts: list[tuple[str, str, bool]] = []
+    for guide_id in db.GUIDES_BY_ID:
+        guide = guides.get_guide(guide_id, {})
+        texts += [(guide["intro_speech_hi"], "hi", True), (guide["intro_en"], "en", True)]
+        for step in guide["steps"]:
+            texts += [(step["speech_hi"], "hi", True), (step["speech_en"], "en", True)]
+    for machine in db.MACHINES:
+        try:
+            info = machines.about(machine["id"], {})
+        except Exception:  # noqa: BLE001 - a machine without an about page
+            continue
+        for section in info["sections"]:
+            texts += [(section["speech_hi"], "hi", True), (section["en"], "en", True)]
+    started = time.perf_counter()
+    made = tts.warm(texts)
+    log.info("speech cache warm: %d clips, %d newly made in %.0fs", len(texts), made, time.perf_counter() - started)
+
+
 @app.on_event("startup")
 def startup() -> None:
     log.info("%s v%s", settings.app_name, settings.version)
@@ -123,6 +147,11 @@ def startup() -> None:
     log.info("  translate : %s (%s)", settings.translate_model, "on" if settings.enable_translate else "off")
     log.info("  embedder  : %s (%s)", settings.embedder_model, "on" if settings.enable_embedder else "off")
     log.info("  intent    : %s", settings.intent_model_dir)
+
+    if settings.enable_tts and settings.warm_tts_cache:
+        import threading
+
+        threading.Thread(target=_warm_speech, name="tts-warm", daemon=True).start()
 
     if settings.eager_load:
         # Pay the load cost at boot so the first question of a demo is not the

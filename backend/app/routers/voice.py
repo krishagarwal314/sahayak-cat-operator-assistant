@@ -137,6 +137,7 @@ def speak(payload: SpeakRequest, _: dict = Depends(security.current_operator)) -
         headers={
             "X-TTS-Engine": speech.engine,
             "X-TTS-Latency-Ms": str(speech.latency_ms),
+            "X-TTS-Cached": "1" if speech.cached else "0",
             "Cache-Control": "no-store",
         },
     )
