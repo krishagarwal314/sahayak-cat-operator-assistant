@@ -38,7 +38,9 @@ def _load():
 
     device = registry.resolve_device()
     tokenizer = AutoTokenizer.from_pretrained(str(path))
-    model = AutoModelForSequenceClassification.from_pretrained(str(path))
+    # The exported model is stored in half precision to keep the download small;
+    # load it as float32 so it runs correctly on CPU as well as GPU.
+    model = AutoModelForSequenceClassification.from_pretrained(str(path), torch_dtype=torch.float32)
     model.to(device).eval()
 
     labels_file = path / "labels.json"
