@@ -49,7 +49,14 @@ def _load():
     else:
         id2label = {int(k): v for k, v in model.config.id2label.items()}
 
-    return {"tokenizer": tokenizer, "model": model, "device": device, "id2label": id2label, "torch": torch}
+    # Temperature from app.ai.intent.calibrate, if it has been run.
+    temperature = 1.0
+    calibration = path / "calibration.json"
+    if calibration.exists():
+        temperature = float(json.loads(calibration.read_text()).get("temperature", 1.0)) or 1.0
+
+    return {"tokenizer": tokenizer, "model": model, "device": device, "id2label": id2label, "torch": torch,
+            "temperature": temperature}
 
 
 def available() -> bool:
@@ -66,7 +73,7 @@ def predict(text: str, *, allowed: set[str] | None = None, top_k: int = 3) -> Cl
     enc = {k: v.to(bundle["device"]) for k, v in enc.items()}
     with torch.inference_mode():
         logits = bundle["model"](**enc).logits[0]
-    probs = torch.softmax(logits.float(), dim=-1).cpu().tolist()
+    probs = torch.softmax(logits.float() / bundle["temperature"], dim=-1).cpu().tolist()
 
     scored = [(bundle["id2label"].get(i, str(i)), p) for i, p in enumerate(probs)]
     if allowed is not None:

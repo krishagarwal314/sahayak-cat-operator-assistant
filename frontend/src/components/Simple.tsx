@@ -9,7 +9,7 @@
  *   the screen tells you where you are when it opens
  */
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useLang } from '../lib/i18n'
 import { useSession } from '../lib/session'
@@ -189,7 +189,12 @@ function VoiceDock({ machineId, answer, setAnswer, error, setError, onResult }: 
   const navigate = useNavigate()
   const { speak, speakingId, stop } = useVoiceOut()
 
-  const voice = useVoice({ machineId, lang, speak: true, onResult, onError: setError })
+  const { machineId: selected } = useSession()
+  const [params] = useSearchParams()
+  const location = useLocation()
+  // On the machine picker, the scripted question selects a machine.
+  const picking = location.pathname === '/machine' && (!selected || params.get('pick') === '1')
+  const voice = useVoice({ machineId, lang, speak: true, picking, onResult, onError: setError })
 
   const card = answer?.reply.card
   const icon = answer ? (INTENT_ICON[answer.route.intent] ?? 'help') : 'mic'

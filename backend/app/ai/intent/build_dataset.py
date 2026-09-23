@@ -147,13 +147,25 @@ HARD_NEGATIVES: dict[str, list[str]] = {
 # Out of scope. Note the traps: "how do i make tea", "how long is the movie" -
 # they share words with focus intents but must be refused.
 OUT_OF_SCOPE = [
+    # everyday chatter
     "what's the cricket score", "tell me a joke", "who is the prime minister", "book a cab", "order lunch",
-    "play some music", "set an alarm", "i love you", "good night", "how do i make tea", "how do i cook rice",
-    "how long is the movie", "how long is the train journey", "what's the price of petrol in delhi",
-    "is it safe to eat street food", "is my phone safe", "call my wife", "when is my salary coming",
-    "what is two plus two", "send a message to my brother", "how do i fix my bike", "who won the match",
+    "play some music", "set an alarm", "i love you", "good night", "call my wife", "when is my salary coming",
+    "what is two plus two", "send a message to my brother", "who won the match", "what is your name",
+    "tell me a story", "i am hungry", "where is the toilet", "what time is lunch", "how much money do i earn",
+    "book a train ticket", "recharge my phone", "what's the date today", "sing a song",
+    # traps: they share words with the focus intents but are not about the machine
+    "how do i make tea", "how do i make coffee", "how do i cook rice", "how do i cook dal", "how do i fix my bike",
+    "how do i fix my phone", "how do i send money", "how do i book a ticket", "how do i get to the market",
+    "how long is the movie", "how long is the flight", "how long is the train journey", "how long does the bus take",
+    "how long will the rain last", "how long until the match starts",
+    "is it safe to eat street food", "is my phone safe", "is my wallet safe", "is it safe to swim",
+    "is my bike safe here", "is this water safe to drink", "is my money safe in the bank",
+    "what's the price of petrol in delhi", "how much petrol for my bike", "is anything wrong with my phone",
+    "my phone is broken", "is my tv working",
+    # Hindi and Hinglish
     "आज क्रिकेट मैच का स्कोर क्या है", "मेरी तनख्वाह कब आएगी", "चाय कहाँ मिलेगी", "गाना बजाओ", "कोई मज़ेदार बात सुनाओ",
-    "मुझे भूख लगी है", "बस कब आएगी", "salary kab milegi", "chai peene chalo", "movie kitni lambi hai",
+    "मुझे भूख लगी है", "बस कब आएगी", "चाय कैसे बनाते हैं", "फिल्म कितनी लंबी है", "फोन सुरक्षित है क्या",
+    "salary kab milegi", "chai peene chalo", "movie kitni lambi hai", "chai kaise banaye", "phone kharab hai kya",
 ]
 
 _FILLERS_EN = ["uh", "um", "like", "so", "okay"]
@@ -228,7 +240,7 @@ def _split_seeds(seeds: list[str], val_fraction: float) -> tuple[list[str], list
     return seeds[cut:], seeds[:cut]
 
 
-def build(focus_variants: int = 12, other_variants: int = 4, val_fraction: float = 0.2):
+def build(focus_variants: int = 12, other_variants: int = 8, val_fraction: float = 0.2):
     train: list[dict] = []
     val: list[dict] = []
 
@@ -259,7 +271,7 @@ def build(focus_variants: int = 12, other_variants: int = 4, val_fraction: float
 
     oos_train, oos_val = _split_seeds(OUT_OF_SCOPE, val_fraction)
     for seed in oos_train:
-        emit(train, UNKNOWN, _en_variants(seed, 6) if _is_latin(seed) else _hi_variants(seed, 4), False)
+        emit(train, UNKNOWN, _en_variants(seed, 8) if _is_latin(seed) else _hi_variants(seed, 5), False)
     for seed in oos_val:
         emit(val, UNKNOWN, {seed}, False)
 

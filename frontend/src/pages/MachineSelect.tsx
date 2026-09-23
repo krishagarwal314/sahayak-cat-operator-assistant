@@ -45,6 +45,7 @@ export default function MachineSelect() {
     machineId: machines?.[0]?.id ?? 'EXC001',
     lang,
     speak: false,
+    picking: true,
     onResult: onVoiceResult,
     onError: setToast,
   })

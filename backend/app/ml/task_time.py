@@ -68,8 +68,8 @@ def train(rows: list[dict], seed: int = 7) -> dict:
         return np.array([max(1, r["units"]) for r in rs], dtype=float)
 
     median = _pipeline("absolute_error").fit(_frame(train_rows), rates(train_rows))
-    low = _pipeline("quantile", 0.1).fit(_frame(train_rows), rates(train_rows))
-    high = _pipeline("quantile", 0.9).fit(_frame(train_rows), rates(train_rows))
+    low = _pipeline("quantile", 0.07).fit(_frame(train_rows), rates(train_rows))
+    high = _pipeline("quantile", 0.93).fit(_frame(train_rows), rates(train_rows))
 
     actual = np.array([r["actual_minutes"] for r in test_rows])
     pred = median.predict(_frame(test_rows)) * units(test_rows)
@@ -85,7 +85,7 @@ def train(rows: list[dict], seed: int = 7) -> dict:
     mae = float(np.mean(np.abs(pred - actual)))
     base_mae = float(np.mean(np.abs(base - actual)))
     metrics = {
-        "model": "gradient boosting, minutes per unit, with 10th/90th percentile models",
+        "model": "gradient boosting, minutes per unit, with 7th/93rd percentile models",
         "trained_on_jobs": len(rows), "test_jobs": len(test_rows),
         "mae_minutes": round(mae, 1),
         "mape_pct": round(float(np.mean(np.abs(pred - actual) / actual)) * 100, 1),
@@ -98,8 +98,8 @@ def train(rows: list[dict], seed: int = 7) -> dict:
     # Refit on every job for the model that ships.
     final = {
         "median": _pipeline("absolute_error").fit(_frame(rows), rates(rows)),
-        "low": _pipeline("quantile", 0.1).fit(_frame(rows), rates(rows)),
-        "high": _pipeline("quantile", 0.9).fit(_frame(rows), rates(rows)),
+        "low": _pipeline("quantile", 0.07).fit(_frame(rows), rates(rows)),
+        "high": _pipeline("quantile", 0.93).fit(_frame(rows), rates(rows)),
     }
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(final, MODEL_PATH)

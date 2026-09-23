@@ -36,16 +36,18 @@ def main() -> None:
     parser.add_argument("--base-model", default=settings.intent_base_model)
     parser.add_argument("--out", default=str(BACKEND_DIR / "models" / "intent-run"),
                         help="where checkpoints and the best model go - put this on Google Drive in Colab")
-    parser.add_argument("--epochs", type=int, default=6)
-    parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--lr", type=float, default=4e-5)
+    parser.add_argument("--epochs", type=int, default=20)
+    parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--max-length", type=int, default=48)
     parser.add_argument("--warmup-ratio", type=float, default=0.1)
     parser.add_argument("--save-every-minutes", type=float, default=5.0)
-    parser.add_argument("--focus-weight", type=float, default=1.5,
+    parser.add_argument("--focus-weight", type=float, default=1.2,
                         help="extra loss weight for the focus intents")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--fresh", action="store_true", help="ignore any checkpoint and start over")
+    parser.add_argument("--patience", type=int, default=4,
+                        help="stop after this many epochs without improvement")
     args = parser.parse_args()
 
     import torch
@@ -131,12 +133,14 @@ def main() -> None:
 
     def evaluate():
         model.eval()
-        hits, per = 0, {}
+        hits, per, conf = 0, {}, []
         with torch.inference_mode():
             for start in range(0, len(val_rows), 64):
                 rows = val_rows[start:start + 64]
                 enc, labels = encode(rows)
-                preds = model(**enc).logits.argmax(-1)
+                probs = torch.softmax(model(**enc).logits.float(), -1)
+                conf.extend(probs.max(-1).values.tolist())
+                preds = probs.argmax(-1)
                 for row, p, g in zip(rows, preds.tolist(), labels.tolist()):
                     ok = p == g
                     hits += ok
@@ -147,7 +151,8 @@ def main() -> None:
         acc = hits / max(1, len(val_rows))
         focus_rows = [v for k, v in per.items() if k in focus]
         focus_acc = sum(h for h, _ in focus_rows) / max(1, sum(n for _, n in focus_rows))
-        return acc, focus_acc, {k: round(h / n, 3) for k, (h, n) in sorted(per.items())}
+        mean_conf = sum(conf) / max(1, len(conf))
+        return acc, focus_acc, {k: round(h / n, 3) for k, (h, n) in sorted(per.items())}, mean_conf
 
     def save_checkpoint(epoch: int, reason: str):
         tmp = out / "last.tmp"
@@ -206,24 +211,36 @@ def main() -> None:
                 save_checkpoint(epoch, "timed save")
                 last_save = time.time()
 
-        acc, focus_acc, per = evaluate()
+        acc, focus_acc, per, mean_conf = evaluate()
         history.append({"epoch": epoch + 1, "step": global_step, "loss": round(running / max(1, seen), 4),
-                        "val_accuracy": round(acc, 4), "focus_accuracy": round(focus_acc, 4)})
-        improved = acc >= best_acc
+                        "val_accuracy": round(acc, 4), "focus_accuracy": round(focus_acc, 4),
+                        "confidence": round(mean_conf, 3)})
+        # Ties on accuracy go to the more confident model - a correct but
+        # unsure model is no use to a router that needs to trust it.
+        score = acc + mean_conf * 1e-3
+        improved = score > best_acc
         if improved:
-            best_acc = acc
+            best_acc = score
             save_best(acc, focus_acc, per, epoch + 1)
-        bar.write(f"epoch {epoch + 1}/{args.epochs}: loss {running / max(1, seen):.3f} | "
-                  f"validation {acc:.1%} | focus intents {focus_acc:.1%}" + ("  <- best, saved" if improved else ""))
+            (best_dir / "metrics.json").write_text(json.dumps(
+                {**json.loads((best_dir / "metrics.json").read_text()), "mean_confidence": round(mean_conf, 3)},
+                ensure_ascii=False, indent=1))
+        bar.write(f"epoch {epoch + 1}/{args.epochs}: loss {running / max(1, seen):.3f} | validation {acc:.1%} | "
+                  f"focus intents {focus_acc:.1%} | confidence {mean_conf:.2f}" + ("  <- best, saved" if improved else ""))
         save_checkpoint(epoch + 1, f"end of epoch {epoch + 1}")
         last_save = time.time()
+        recent = [h["epoch"] for h in history if h["val_accuracy"] + h["confidence"] * 1e-3 >= best_acc]
+        if epoch + 1 - max(recent, default=epoch + 1) >= args.patience:
+            bar.write(f"no improvement for {args.patience} epochs - stopping early")
+            break
 
     bar.close()
 
     # ------------------------------------------------------------------ report
     metrics = json.loads((best_dir / "metrics.json").read_text())
     _log(f"\ndone. best validation {metrics['best_val_accuracy']:.1%}, "
-         f"focus intents {metrics['focus_val_accuracy']:.1%} (epoch {metrics['epoch']})")
+         f"focus intents {metrics['focus_val_accuracy']:.1%}, confidence {metrics.get('mean_confidence', 0):.2f} "
+         f"(epoch {metrics['epoch']})")
     _log("focus intents:")
     for name in sorted(focus):
         _log(f"  {name:20s} {metrics['per_label_accuracy'].get(name, 0):.0%}")

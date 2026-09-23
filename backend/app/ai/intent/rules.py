@@ -84,7 +84,22 @@ def _phrase_weight(keyword: str, utterance_tokens: list[str]) -> float:
     return weight * (1.0 + 0.5 * (len(parts) - 1))
 
 
+def _has_domain_word(words: tuple[str, ...], utterance_tokens: list[str]) -> bool:
+    """Stricter than keyword matching: the utterance word must BE the domain
+    word or extend it (khod -> khodu), never be a fragment of it - otherwise
+    "safe" would count as "safety" and "is my phone safe" would pass."""
+    for word in words:
+        canon = _canon(word)
+        if not canon:
+            continue
+        if any(tok == canon[0] or tok.startswith(canon[0]) for tok in utterance_tokens):
+            return True
+    return False
+
+
 def _score(spec: IntentSpec, utterance_tokens: list[str]) -> tuple[float, list[str]]:
+    if spec.requires and not _has_domain_word(spec.requires, utterance_tokens):
+        return 0.0, []
     matched: list[str] = []
     best_weight = 0.0
     for keyword in spec.keywords:
@@ -104,7 +119,7 @@ def _score(spec: IntentSpec, utterance_tokens: list[str]) -> tuple[float, list[s
     # 1.0 and the anti-keyword silently has no effect.
     for anti in spec.anti_keywords:
         if _phrase_weight(anti, utterance_tokens) > 0:
-            score -= 0.42
+            score -= 0.5
     return max(0.0, score), matched
 
 

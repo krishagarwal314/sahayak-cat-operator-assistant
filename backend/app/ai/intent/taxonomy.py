@@ -31,6 +31,9 @@ class IntentSpec:
     examples: tuple[str, ...] = ()
     description: str = ""
     slots: tuple[str, ...] = ()
+    # At least one of these words must appear before the rules may pick this
+    # intent. Stops "how do I make tea" from opening a machine guide.
+    requires: tuple[str, ...] = ()
 
 
 def _lines(block: str) -> tuple[str, ...]:
@@ -45,7 +48,8 @@ _RAW: dict[str, dict] = {
         description="Remaining fuel in the tank and how long it will last.",
         keywords=("ईंधन", "इंधन", "डीज़ल", "डीजल", "फ्यूल", "टंकी", "तेल कितना",
                   "fuel", "diesel", "tank", "petrol"),
-        anti_keywords=("हाइड्रोलिक", "hydraulic", "इंजन ऑयल", "engine oil"),
+        anti_keywords=("हाइड्रोलिक", "hydraulic", "इंजन ऑयल", "engine oil", "idling", "idle", "waste",
+                       "price", "cost"),
         examples="""
         कितना ईंधन बचा है
         ईंधन कितना है
@@ -219,7 +223,8 @@ _RAW: dict[str, dict] = {
         sensors=("engine_hours",),
         description="Total engine hour meter reading.",
         keywords=("इंजन घंटे", "घंटे मीटर", "कितने घंटे चली", "घंटे चल", "कुल घंटे", "घंटा मीटर",
-                  "engine hours", "hour meter", "smu", "total hours"),
+                  "engine hours", "hour meter", "smu", "total hours", "engine been running", "engine running",
+                  "hours on the"),
         anti_keywords=("आइडल", "idle", "सर्विस", "service"),
         examples="""
         इंजन कितने घंटे चला है
@@ -253,6 +258,7 @@ _RAW: dict[str, dict] = {
         description="Number of load / dig / push cycles completed today.",
         keywords=("साइकिल", "चक्कर", "बकेट भरे", "बकेट भर", "कितनी बकेट", "बाल्टी",
                   "cycles", "load cycles", "buckets", "bucket bhari"),
+        anti_keywords=("anybody", "anyone", "someone", "कोई"),
         examples="""
         आज कितने लोड साइकिल हुए
         कितने चक्कर लगाए आज
@@ -371,7 +377,9 @@ _RAW: dict[str, dict] = {
         domain="safety",
         sensors=("seatbelt", "proximity_objects"),
         description="Overall safety state: belt, proximity, violations today.",
-        keywords=("सुरक्षा", "सुरक्षित", "सेफ्टी", "safety", "safe to operate", "safety status"),
+        keywords=("सुरक्षा", "सुरक्षित", "सेफ्टी", "safety", "safe to operate", "safety status",
+                  "safety warnings", "safety issues", "safety problems", "is it safe", "am i safe"),
+        requires=("machine", "excavator", "loader", "dozer", "bucket", "blade", "engine", "start", "shut", "switch", "dig", "trench", "load", "truck", "operate", "drive", "park", "oil", "lever", "seatbelt", "climb", "check", "steps", "procedure", "this", "work", "job", "task", "site", "area", "safety", "danger", "dangerous", "continue", "digging", "loading", "finish", "done", "complete", "shift", "hours", "time", "मशीन", "खाई", "बकेट", "ब्लेड", "इंजन", "चालू", "बंद", "ट्रक", "काम", "सुरक्षा", "सुरक्षित", "चला", "खोद", "लोड", "यह", "ये", "इस", "खत्म", "machine", "kaam", "chala", "khod"),
         anti_keywords=("सीट बेल्ट", "seatbelt", "seat belt", "आसपास", "पीछे", "swing", "proximity"),
         examples="""
         सुरक्षा की स्थिति क्या है
@@ -404,7 +412,8 @@ _RAW: dict[str, dict] = {
         description="People or objects inside the machine's danger zone.",
         keywords=("आसपास", "नज़दीक", "पास में कोई", "पीछे कोई", "कोई आदमी", "कोई व्यक्ति",
                   "टकरा", "खतरा", "दूरी", "proximity", "nearby", "around me", "blind spot",
-                  "hazard", "anyone near", "safe to swing", "swing safely", "behind me"),
+                  "hazard", "anyone near", "safe to swing", "swing safely", "behind me", "anybody around",
+                  "anyone around", "someone near", "standing near"),
         examples="""
         क्या आसपास कोई है
         मशीन के पास कोई व्यक्ति है क्या
@@ -480,7 +489,9 @@ _RAW: dict[str, dict] = {
                   "खत्म होने में", "कितनी देर है",
                   "how long", "how much time", "eta", "finish by", "time estimate",
                   "when will", "kitni der", "kitna time", "der lagegi", "time lagega"),
-        anti_keywords=("आइडल", "idle", "खाली", "बेकार"),
+        anti_keywords=("आइडल", "idle", "idling", "खाली", "बेकार", "fuel", "diesel", "engine", "service",
+                       "servicing", "movie", "film", "flight", "journey"),
+        requires=("machine", "excavator", "loader", "dozer", "bucket", "blade", "engine", "start", "shut", "switch", "dig", "trench", "load", "truck", "operate", "drive", "park", "oil", "lever", "seatbelt", "climb", "check", "steps", "procedure", "this", "work", "job", "task", "site", "area", "safety", "danger", "dangerous", "continue", "digging", "loading", "finish", "done", "complete", "shift", "hours", "time", "मशीन", "खाई", "बकेट", "ब्लेड", "इंजन", "चालू", "बंद", "ट्रक", "काम", "सुरक्षा", "सुरक्षित", "चला", "खोद", "लोड", "यह", "ये", "इस", "खत्म", "machine", "kaam", "chala", "khod"),
         examples="""
         यह काम पूरा होने में कितना समय लगेगा
         कितनी देर लगेगी
@@ -498,7 +509,8 @@ _RAW: dict[str, dict] = {
         sensors=("load_cycles",),
         description="How much of the current task is done.",
         keywords=("कितना हो गया", "प्रगति", "कितना बाकी", "पूरा हुआ", "कितना काम", "कितना निपटा",
-                  "progress", "how much done", "how much left", "kitna ho gaya"),
+                  "progress", "how much done", "how much left", "kitna ho gaya", "how much work"),
+        anti_keywords=("fuel", "diesel", "gas", "tank", "petrol", "ईंधन", "डीजल", "टंकी"),
         examples="""
         काम कितना हो गया है
         कितना बाकी है
@@ -531,6 +543,7 @@ _RAW: dict[str, dict] = {
         description="Operator wants training material or an instructor.",
         keywords=("ट्रेनिंग", "प्रशिक्षण", "सीखना", "वीडियो", "सिखाओ", "कोर्स", "इंस्ट्रक्टर",
                   "training", "learn", "tutorial", "course", "instructor", "video"),
+        anti_keywords=("journey", "ticket", "station", "railway"),
         examples="""
         मुझे ट्रेनिंग चाहिए
         कोई सीखने वाला वीडियो दिखाओ
@@ -551,7 +564,8 @@ _RAW: dict[str, dict] = {
                   "कैसे धकेल", "कैसे चढ़", "कैसे उतर", "सही तरीका", "कदम बताओ",
                   "how do i", "how to", "procedure", "kaise chalau", "kaise karu", "steps"),
         # "कैसे चल रहा है" asks how things are going, not how to operate something.
-        anti_keywords=("चल रहा", "चल रही", "chal raha", "chal rahi", "कैसी है", "kaisi hai"),
+        anti_keywords=("चल रहा", "चल रही", "chal raha", "chal rahi", "कैसी है", "kaisi hai", "much", "many"),
+        requires=("machine", "excavator", "loader", "dozer", "bucket", "blade", "engine", "start", "shut", "switch", "dig", "trench", "load", "truck", "operate", "drive", "park", "oil", "lever", "seatbelt", "climb", "check", "steps", "procedure", "this", "work", "job", "task", "site", "area", "safety", "danger", "dangerous", "continue", "digging", "loading", "finish", "done", "complete", "shift", "hours", "time", "मशीन", "खाई", "बकेट", "ब्लेड", "इंजन", "चालू", "बंद", "ट्रक", "काम", "सुरक्षा", "सुरक्षित", "चला", "खोद", "लोड", "यह", "ये", "इस", "खत्म", "machine", "kaam", "chala", "khod"),
         examples="""
         खाई कैसे खोदूँ
         ट्रक में सही तरीके से कैसे लोड करूँ
@@ -652,6 +666,7 @@ def _build() -> dict[str, IntentSpec]:
             examples=_lines(raw.get("examples", "")),
             description=raw.get("description", ""),
             slots=tuple(raw.get("slots", ())),
+            requires=tuple(raw.get("requires", ())),
         )
     return out
 

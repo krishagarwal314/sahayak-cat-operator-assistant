@@ -32,3 +32,6 @@ demo_test.wav
 # build artefacts
 frontend/tsconfig.tsbuildinfo
 *.tsbuildinfo
+
+# trained model archives - never commit these
+*.zip
