@@ -54,10 +54,18 @@ if ! "$PY" -c "from phonemizer import phonemize; assert phonemize('machine', lan
   "$PY" -m pip install -q phonemizer || true
 fi
 
-# The task-time and safety-risk models take seconds to train on any CPU, so
-# train them here if they are missing rather than asking anyone to.
-if [[ ! -f "${ROOT}/backend/models/ml/task_time.joblib" || ! -f "${ROOT}/backend/models/ml/safety_risk.joblib" ]]; then
-  printf '\n%s\n' "$(bold '==> training task-time and safety-risk models (a few seconds)')"
+# The task-time, safety-risk and unusual-use models take seconds to train on
+# any CPU, so train them here rather than asking anyone to: when one is
+# missing, or when the history they learn from has changed since.
+ML="${ROOT}/backend/models/ml"
+SEED="${ROOT}/backend/app/seed"
+retrain=0
+for m in task_time safety_risk unusual_use; do
+  if [[ ! -f "${ML}/${m}.joblib" || "${SEED}/telemetry_history.csv" -nt "${ML}/${m}.joblib" \
+        || "${SEED}/task_history.json" -nt "${ML}/${m}.joblib" ]]; then retrain=1; fi
+done
+if [[ $retrain == 1 ]]; then
+  printf '\n%s\n' "$(bold '==> training task-time, safety-risk and unusual-use models (a few seconds)')"
   "$PY" -c "import sklearn" >/dev/null 2>&1 || "$PY" -m pip install -q scikit-learn pandas
   ( cd "${ROOT}/backend" && "$PY" -m app.ml.train_all ) | sed 's/^/  /' || echo "  model training failed - estimates fall back to nearest neighbours"
 fi
@@ -127,6 +135,7 @@ check_model embedder "semantic intent matching" no
 check_model face  "face login (camera)"      no
 if [[ -f "${ROOT}/backend/models/ml/task_time.joblib" ]]; then ok "task time model trained"; else bad "task time model missing"; fi
 if [[ -f "${ROOT}/backend/models/ml/safety_risk.joblib" ]]; then ok "safety risk model trained"; else bad "safety risk model missing"; fi
+if [[ -f "${ROOT}/backend/models/ml/unusual_use.joblib" ]]; then ok "unusual use model trained"; else bad "unusual use model missing"; fi
 
 command -v ffmpeg >/dev/null 2>&1 && ok "ffmpeg present (decodes browser audio)" \
   || bad "ffmpeg MISSING - voice input will fail. Run: apt-get install -y ffmpeg"

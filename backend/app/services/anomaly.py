@@ -321,6 +321,34 @@ def _threshold_sensors(snap: dict, already: set[str]) -> list[Finding]:
     return out
 
 
+def _unusual_use(machine_id: str) -> Finding | None:
+    """Hours in the last three shifts that the unusual-use model flagged."""
+    from ..ml import unusual_use
+
+    hours = unusual_use.scan(machine_id, db.telemetry_history(machine_id, limit=27))
+    # An hour the model finds odd but cannot put into words is not worth an
+    # operator's attention.
+    hours = [h for h in hours if h["kind"] != "other"]
+    if not hours:
+        return None
+    worst = hours[0]
+    when = worst["timestamp"][5:16]
+    others = len(hours) - 1
+    more_en = f" {others} more unusual hour(s) in the last three shifts." if others else ""
+    more_hi = f" पिछली तीन शिफ्ट में ऐसे {others} और घंटे मिले।" if others else ""
+    return Finding(
+        code="UNUSUAL_USE",
+        severity="warning",
+        title_en="Unusual use of the machine",
+        title_hi="मशीन का असामान्य इस्तेमाल",
+        detail_en=f"{when}: {worst['text']['en']}{more_en}",
+        detail_hi=f"{worst['text']['hi']}{more_hi}",
+        recommendation_en="Check the log for this hour with the operator.",
+        recommendation_hi="इस घंटे के बारे में ऑपरेटर से बात करें।",
+        evidence={"hours": hours[:5]},
+    )
+
+
 SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
 
 
@@ -339,6 +367,9 @@ def analyse(machine_id: str) -> list[dict]:
     if found:
         findings.append(found)
     found = _maintenance(machine_id)
+    if found:
+        findings.append(found)
+    found = _unusual_use(machine_id)
     if found:
         findings.append(found)
     findings.extend(_threshold_sensors(snap, {f.code for f in findings}))

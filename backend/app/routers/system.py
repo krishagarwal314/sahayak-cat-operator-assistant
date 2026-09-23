@@ -25,9 +25,10 @@ def health() -> dict:
 
 
 def _ml_metrics() -> dict:
-    from ..ml import safety_risk, task_time
+    from ..ml import safety_risk, task_time, unusual_use
 
-    return {"task_time": task_time.metrics(), "safety_risk": safety_risk.metrics()}
+    return {"task_time": task_time.metrics(), "safety_risk": safety_risk.metrics(),
+            "unusual_use": unusual_use.metrics()}
 
 
 @router.get("/models")

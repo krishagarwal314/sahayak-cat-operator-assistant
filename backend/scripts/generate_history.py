@@ -20,6 +20,17 @@ from pathlib import Path
 
 SEED_DIR = Path(__file__).resolve().parents[1] / "app" / "seed"
 RNG = random.Random(20250501)
+# Misuse is drawn from its own stream so adding it leaves every other value
+# exactly as it was.
+MISUSE_RNG = random.Random(4242)
+
+# Unusual use, planted in about one hour in twenty. The unusual-use model never
+# sees these labels; they exist only to score it.
+#   fuel_loss    - far more diesel burned than the work done (leak or theft)
+#   idle_burn    - standing idle but burning working-level fuel (revving idle)
+#   overworking  - cycles far above normal with a hot engine (abusive operation)
+#   no_work_run  - engine running, neither idling nor working (unlogged use)
+MISUSE = ["fuel_loss", "idle_burn", "overworking", "no_work_run"]
 
 MACHINES = {
     "EXC001": {"family": "excavator", "operators": ["OP1001", "OP1003"], "start_hours": 1180.0},
@@ -127,10 +138,25 @@ def gen_telemetry(days: int = 60) -> list[dict]:
                 )
                 cycles = 0 if not working else RNG.randint(6, 18)
                 fuel_used = round(RNG.uniform(4.0, 7.5) if working else RNG.uniform(1.2, 3.0), 1)
+                misuse = MISUSE_RNG.choice(MISUSE) if MISUSE_RNG.random() < 0.05 else ""
+                if misuse == "fuel_loss":
+                    fuel_used = round(fuel_used + MISUSE_RNG.uniform(4.5, 7.0), 1)
+                elif misuse == "idle_burn":
+                    idle_min, cycles = MISUSE_RNG.uniform(38, 55), 0
+                    fuel_used = round(MISUSE_RNG.uniform(5.5, 8.0), 1)
+                elif misuse == "overworking":
+                    cycles = MISUSE_RNG.randint(25, 34)
+                    idle_min = MISUSE_RNG.uniform(0, 2)
+                    fuel_used = round(MISUSE_RNG.uniform(8.0, 10.5), 1)
+                elif misuse == "no_work_run":
+                    idle_min, cycles = MISUSE_RNG.uniform(0, 4), 0
+                    fuel_used = round(MISUSE_RNG.uniform(4.0, 6.5), 1)
                 fuel_pct = max(6.0, fuel_pct - fuel_used / 4.1)
                 hours += 1.0
                 ambient = 24 + heat_shift + 12 * math.sin((h - 2) / 9 * math.pi) + RNG.uniform(-2, 2)
                 engine_temp = 82 + (ambient - 28) * 0.45 + (6 if cycles > 14 else 0) + RNG.uniform(-3, 4)
+                if misuse == "overworking":
+                    engine_temp += MISUSE_RNG.uniform(7, 12)
 
                 belt_risk = 0.02 + (0.30 if bad_day else 0) + max(0, minutes_since_break - 180) / 60 * 0.06 \
                     + (0.06 if ambient > 38 else 0) + 0.08 * min(violations, 3)
@@ -158,6 +184,7 @@ def gen_telemetry(days: int = 60) -> list[dict]:
                     "Hours Into Shift": h,
                     "Minutes Since Break": minutes_since_break,
                     "Alerts So Far Today": violations - int(alert),
+                    "Unusual Use": misuse,
                 }
                 if family == "excavator":
                     row["Hydraulic Temp (C)"] = round(engine_temp - 8 + RNG.uniform(-3, 7), 1)
