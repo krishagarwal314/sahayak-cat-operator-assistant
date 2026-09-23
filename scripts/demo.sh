@@ -45,6 +45,15 @@ if ! "$PY" -c "import cv2" >/dev/null 2>&1; then
     || echo "  OpenCV install failed - tap-your-photo login still works"
 fi
 
+# English pronunciation needs espeak (turns words into sounds). Without it the
+# English voice falls back to a letter-reader that mispronounces words.
+if ! "$PY" -c "from phonemizer import phonemize; assert phonemize('machine', language='en-us', backend='espeak')" >/dev/null 2>&1; then
+  printf '\n%s\n' "$(bold '==> installing espeak-ng for English pronunciation')"
+  SUDO=""; [[ "$(id -u)" -ne 0 ]] && command -v sudo >/dev/null && SUDO="sudo"
+  $SUDO apt-get install -y -qq espeak-ng >/dev/null 2>&1 || echo "  espeak-ng install failed (English will use the fallback voice)"
+  "$PY" -m pip install -q phonemizer || true
+fi
+
 # ---------------------------------------------------------------- frontend
 # Always rebuild. Only building when dist/ was missing meant a pulled UI change
 # was never served - the old build just stayed in place. It takes seconds.

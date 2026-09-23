@@ -28,6 +28,9 @@ huggingface_hub>=0.24
 opencv-python-headless>=4.8,<4.12
 
 # ---- audio ----
+# English voice pronunciation: needs the espeak-ng system package too
+#   apt-get install -y espeak-ng
+phonemizer>=3.2
 soundfile>=0.12
 librosa>=0.10
 

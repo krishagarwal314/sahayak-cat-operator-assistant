@@ -38,7 +38,7 @@ PROFILES: dict[str, dict[str, str]] = {
     "lite": {
         "stt": "openai/whisper-small",
         "tts": "facebook/mms-tts-hin",
-        "tts_en": "facebook/mms-tts-eng",
+        "tts_en": "kakao-enterprise/vits-ljs",
         "translate": "facebook/nllb-200-distilled-600M",
         "embedder": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
         "intent_base": "ai4bharat/indic-bert",
@@ -50,9 +50,11 @@ PROFILES: dict[str, dict[str, str]] = {
         # VITS, 145M, streams instantly on CPU. Set TTS_MODEL=ai4bharat/IndicF5
         # for the higher fidelity (but heavier, reference-audio driven) option.
         "tts": "facebook/mms-tts-hin",
-        # The Hindi voice has no Latin letters at all, so English replies need
-        # their own model rather than being fed to the Hindi one.
-        "tts_en": "facebook/mms-tts-eng",
+        # English gets its own voice. VITS trained on LJSpeech, and crucially it
+        # converts words to phonemes with espeak first, so irregular spellings
+        # ("machine", "hydraulic") are pronounced properly. The MMS English model
+        # reads letters, not sounds, and got those words wrong.
+        "tts_en": "kakao-enterprise/vits-ljs",
         # NLLB rather than the (better) IndicTrans2, for one blunt reason:
         # IndicTrans2 ships trust_remote_code that imports transformers.onnx,
         # which was removed in transformers v5, so it cannot load there at all.
@@ -67,7 +69,7 @@ PROFILES: dict[str, dict[str, str]] = {
     "quality": {
         "stt": "vasista22/whisper-hindi-medium",
         "tts": "ai4bharat/IndicF5",
-        "tts_en": "facebook/mms-tts-eng",
+        "tts_en": "kakao-enterprise/vits-ljs",
         # Same transformers v5 constraint as above - see the balanced profile.
         "translate": "facebook/nllb-200-distilled-1.3B",
         "embedder": "intfloat/multilingual-e5-base",
@@ -148,11 +150,13 @@ class Settings:
     # Operators listen while working a machine, often with limited literacy,
     # so the default is deliberately a little slower than natural, and the
     # step-by-step machine guides slower still.
-    tts_speaking_rate = float(_env("TTS_SPEAKING_RATE", "0.88"))
-    tts_slow_rate = float(_env("TTS_SLOW_RATE", "0.74"))
+    tts_speaking_rate = float(_env("TTS_SPEAKING_RATE", "1.05"))
+    tts_slow_rate = float(_env("TTS_SLOW_RATE", "0.92"))
     # Silence inserted between sentences, in seconds.
-    tts_sentence_gap = float(_env("TTS_SENTENCE_GAP", "0.35"))
-    tts_slow_sentence_gap = float(_env("TTS_SLOW_SENTENCE_GAP", "0.7"))
+    tts_sentence_gap = float(_env("TTS_SENTENCE_GAP", "0.22"))
+    tts_slow_sentence_gap = float(_env("TTS_SLOW_SENTENCE_GAP", "0.4"))
+    # English voice used if espeak / phonemizer is not installed.
+    tts_model_en_fallback = _env("TTS_MODEL_EN_FALLBACK", "facebook/mms-tts-eng")
     indicf5_ref_audio = _env("INDICF5_REF_AUDIO", str(BACKEND_DIR / "assets" / "ref_audio" / "hindi_ref.wav"))
     indicf5_ref_text = _env(
         "INDICF5_REF_TEXT",

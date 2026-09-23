@@ -44,6 +44,16 @@ def _is_indicf5() -> bool:
     return "indicf5" in settings.tts_model.lower()
 
 
+def _phonemizer_works() -> bool:
+    """True if espeak can actually turn text into phonemes on this machine."""
+    try:
+        from phonemizer import phonemize
+
+        return bool(phonemize("machine", language="en-us", backend="espeak", strip=True))
+    except Exception:  # noqa: BLE001 - package missing, or espeak library missing
+        return False
+
+
 def _model_for(language: str) -> str:
     return settings.tts_model_en if language == "en" else settings.tts_model
 
@@ -66,6 +76,14 @@ def _load(language: str = "hi"):
         return {"engine": "indicf5", "model": model, "device": device, "torch": torch}
 
     from transformers import AutoTokenizer, VitsModel
+
+    if language == "en" and not _phonemizer_works():
+        # The phoneme-based English voice needs espeak. Without it, fall back to
+        # the letter-based MMS voice rather than having no English at all.
+        log.warning("espeak/phonemizer unavailable - English voice falling back to %s. "
+                    "Fix: apt-get install -y espeak-ng && pip install phonemizer",
+                    settings.tts_model_en_fallback)
+        name = settings.tts_model_en_fallback
 
     tokenizer = AutoTokenizer.from_pretrained(name)
     model = VitsModel.from_pretrained(name)

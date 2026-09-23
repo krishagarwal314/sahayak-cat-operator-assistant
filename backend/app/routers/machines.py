@@ -57,8 +57,8 @@ def about(machine_id: str, _: dict = Depends(security.current_operator)) -> dict
          "en": f"First, the safety rules for this machine. {safety_en}"},
         {"id": "summary", "hi": f"{info['identify_hi']} {info['summary_hi']}", "en": f"{info['identify_en']} {info['summary_en']}"},
         {"id": "parts", "hi": f"इसके मुख्य हिस्से। {parts_hi}", "en": f"Its main parts. {parts_en}"},
-        {"id": "video", "hi": "मशीन कैसे चलाते हैं, यह देखने के लिए नीचे लाल बटन वाली वीडियो पर दबाइए।",
-         "en": "To see how to operate the machine, tap the video with the red play button below."},
+        {"id": "video", "hi": "मशीन कैसे चलाते हैं, यह देखने के लिए लाल बटन दबाइए।",
+         "en": "To see how to operate the machine, tap the red play button."},
         {"id": "guides", "hi": "कदम कदम सीखने के लिए नीचे की तस्वीरें दबाइए।",
          "en": "To learn step by step, tap the pictures below."},
     ]

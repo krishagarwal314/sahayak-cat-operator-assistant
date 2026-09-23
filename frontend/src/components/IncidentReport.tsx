@@ -12,7 +12,7 @@ type ReportState = 'closed' | 'idle' | 'recording' | 'working' | 'confirm' | 'se
  * happened, hear it read back, confirm. Lives on the machine page, because an
  * accident is always about a machine.
  */
-export function IncidentReport({ machineId, onSent }: { machineId: string; onSent?: () => void }) {
+export function IncidentReport({ machineId, onSent, compact = false }: { machineId: string; onSent?: () => void; compact?: boolean }) {
   const { lang } = useLang()
   const { speak } = useVoiceOut()
   const recorder = useRef<Recorder | null>(null)
@@ -82,11 +82,18 @@ export function IncidentReport({ machineId, onSent }: { machineId: string; onSen
 
 
   return (<>
-    <button onClick={openReport}
-      className="flex h-24 w-full items-center justify-center gap-4 rounded-[28px] bg-crit text-white shadow-[0_12px_32px_-12px_rgba(255,90,95,0.9)] active:scale-[0.98]">
-      <Pictogram name="alert" className="h-12 w-12" />
-      <span className={`text-[26px] font-extrabold ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('दुर्घटना बताएँ', 'Report accident')}</span>
-    </button>
+    {compact ? (
+      <button onClick={openReport}
+        className="flex h-16 items-center justify-center gap-2 rounded-2xl border-2 border-crit/60 text-base font-bold text-crit">
+        <Pictogram name="alert" className="h-7 w-7" />{t('दुर्घटना', 'Accident')}
+      </button>
+    ) : (
+      <button onClick={openReport}
+        className="flex h-24 w-full items-center justify-center gap-4 rounded-[28px] bg-crit text-white shadow-[0_12px_32px_-12px_rgba(255,90,95,0.9)] active:scale-[0.98]">
+        <Pictogram name="alert" className="h-12 w-12" />
+        <span className={`text-[26px] font-extrabold ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('दुर्घटना बताएँ', 'Report accident')}</span>
+      </button>
+    )}
     {/* ---------------- report sheet ---------------- */}
       {state !== 'closed' && (
         <div className="fixed inset-0 z-[60] flex items-end bg-ink-900/85 p-3 backdrop-blur-sm sm:items-center sm:justify-center">
