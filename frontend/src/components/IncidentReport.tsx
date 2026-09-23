@@ -1,33 +1,24 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRef, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { Recorder, browserSttAvailable, recognizeWithBrowser } from '../lib/audio'
 import { useLang } from '../lib/i18n'
-import { useSession } from '../lib/session'
 import { useVoiceOut } from '../lib/speechContext'
-import { usePageIntro } from '../lib/usePageIntro'
-import type { SafetyReport } from '../lib/types'
-import { Pictogram } from '../components/Pictogram'
-import { PageHeader, toneOf, useAnswer } from '../components/Simple'
+import { Pictogram } from './Pictogram'
 
 type ReportState = 'closed' | 'idle' | 'recording' | 'working' | 'confirm' | 'sent'
 
-export default function SafetySimple() {
+/**
+ * The big red "report an accident" button and its voice sheet: hold, say what
+ * happened, hear it read back, confirm. Lives on the machine page, because an
+ * accident is always about a machine.
+ */
+export function IncidentReport({ machineId, onSent }: { machineId: string; onSent?: () => void }) {
   const { lang } = useLang()
-  const navigate = useNavigate()
-  const { machineId } = useSession()
-  const { speak, speakingId } = useVoiceOut()
-  const { askIntent, busy } = useAnswer()
-  const { replay } = usePageIntro('safety', speak)
-
-  const [report, setReport] = useState<SafetyReport | null>(null)
+  const { speak } = useVoiceOut()
+  const recorder = useRef<Recorder | null>(null)
   const [state, setState] = useState<ReportState>('closed')
   const [said, setSaid] = useState('')
-  const recorder = useRef<Recorder | null>(null)
-  const id = machineId ?? 'EXC001'
-
-  const load = () => api.safety(id).then(setReport).catch(() => undefined)
-  useEffect(() => { void load() }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const id = machineId
 
   const t = (hi: string, en: string) => (lang === 'hi' ? hi : en)
 
@@ -86,62 +77,17 @@ export default function SafetySimple() {
     const res = await api.logIncident({ machine_id: id, description: said, language: lang })
     setState('sent')
     void speak(res.confirmation[lang], lang, 'incident', true)
-    void load()
+    onSent?.()
   }
 
-  const belt = report?.seatbelt.currently_fastened
-  const near = (report?.proximity.active_objects ?? 0) > 0
-  const beltTone = toneOf(belt ? 'ok' : 'crit')
-  const nearTone = toneOf(near ? 'crit' : 'ok')
 
-  return (
-    <div className="space-y-5">
-      <PageHeader icon={<Pictogram name="shield" className="h-10 w-10" />}
-        title={t('सुरक्षा', 'Safety')} onReplay={replay} speaking={speakingId === 'intro-safety'} />
-
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { key: 'belt', icon: 'seatbelt', tone: beltTone, intent: 'SEATBELT_STATUS',
-            label: t('सीट बेल्ट', 'Seatbelt'), value: belt ? t('लगी है', 'On') : t('नहीं लगी', 'Off') },
-          { key: 'near', icon: 'proximity', tone: nearTone, intent: 'PROXIMITY_HAZARD',
-            label: t('आसपास', 'Around'), value: near ? t('कोई है!', 'Someone!') : t('साफ़', 'Clear') },
-        ].map((card) => (
-          <button key={card.key} onClick={() => void askIntent(card.intent, card.label)} disabled={busy}
-            className={`relative flex flex-col items-center gap-2 rounded-[28px] p-5 ring-4 transition-all active:scale-95 ${card.tone.bg} ${card.tone.ring}`}>
-            <span className={`absolute right-3 top-3 ${card.tone.text}`}><Pictogram name={card.tone.icon} className="h-9 w-9" /></span>
-            <Pictogram name={card.icon} className={`h-24 w-24 ${card.tone.text}`} />
-            <span className={`text-lg font-bold text-slate-200 ${lang === 'hi' ? 'lang-hi' : ''}`}>{card.label}</span>
-            <span className={`text-[26px] font-extrabold ${card.tone.text} ${lang === 'hi' ? 'lang-hi' : ''}`}>{card.value}</span>
-          </button>
-        ))}
-      </div>
-
-      {report && (
-        <button onClick={() => void askIntent('SAFETY_STATUS', t('सुरक्षा स्कोर', 'Safety score'))}
-          className="flex w-full items-center gap-4 rounded-3xl bg-ink-800 p-4 text-left">
-          <div className={`grid h-20 w-20 shrink-0 place-items-center rounded-full font-mono text-3xl font-bold ${toneOf(report.severity).bg} ${toneOf(report.severity).text}`}>
-            {report.score}
-          </div>
-          <div className={`text-xl font-bold text-white ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('सुरक्षा अंक', 'Safety score')}</div>
-          <Pictogram name="speaker" className="ml-auto h-8 w-8 text-cat" />
-        </button>
-      )}
-
-      <button onClick={() => navigate('/guide/pre_start')}
-        className="flex h-20 w-full items-center gap-4 rounded-3xl border-2 border-cat/50 bg-cat/10 px-5 text-left">
-        <Pictogram name="walkaround" className="h-12 w-12 shrink-0 text-cat" />
-        <span className={`text-xl font-extrabold text-white ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('रोज़ की जाँच', 'Daily check')}</span>
-        <Pictogram name="next" className="ml-auto h-8 w-8 text-cat" />
-      </button>
-
-      {/* the one big red button */}
-      <button onClick={openReport}
-        className="flex h-28 w-full items-center justify-center gap-4 rounded-[28px] bg-crit text-white shadow-[0_12px_32px_-12px_rgba(255,90,95,0.9)] active:scale-[0.98]">
-        <Pictogram name="alert" className="h-14 w-14" />
-        <span className={`text-[28px] font-extrabold ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('दुर्घटना बताएँ', 'Report accident')}</span>
-      </button>
-
-      {/* ---------------- report sheet ---------------- */}
+  return (<>
+    <button onClick={openReport}
+      className="flex h-24 w-full items-center justify-center gap-4 rounded-[28px] bg-crit text-white shadow-[0_12px_32px_-12px_rgba(255,90,95,0.9)] active:scale-[0.98]">
+      <Pictogram name="alert" className="h-12 w-12" />
+      <span className={`text-[26px] font-extrabold ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('दुर्घटना बताएँ', 'Report accident')}</span>
+    </button>
+    {/* ---------------- report sheet ---------------- */}
       {state !== 'closed' && (
         <div className="fixed inset-0 z-[60] flex items-end bg-ink-900/85 p-3 backdrop-blur-sm sm:items-center sm:justify-center">
           <div className="w-full max-w-lg animate-risein rounded-[32px] border-2 border-crit/50 bg-ink-800 p-6">
@@ -198,6 +144,5 @@ export default function SafetySimple() {
           </div>
         </div>
       )}
-    </div>
-  )
+  </>)
 }

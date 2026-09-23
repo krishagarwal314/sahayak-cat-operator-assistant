@@ -75,22 +75,30 @@ export function PageHeader({ icon, title, onReplay, speaking }: {
 }
 
 // ------------------------------------------------------------------ navigation
+// Safety is deliberately not a tab of its own: it lives on the machine page and
+// is read out first there, because safety is always about a specific machine.
 const TABS = [
   { to: '/work', icon: 'clipboard', hi: 'काम', en: 'Work' },
   { to: '/machine', icon: 'machine', hi: 'मशीन', en: 'Machine' },
   { to: '/learn', icon: 'book', hi: 'सीखें', en: 'Learn' },
-  { to: '/safety', icon: 'shield', hi: 'सुरक्षा', en: 'Safety' },
 ] as const
 
 function BottomNav({ family }: { family: string }) {
   const { lang } = useLang()
+  const { askIntent, busy } = useAnswer()
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line-soft bg-ink-900/95 backdrop-blur-lg"
          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="mx-auto grid max-w-3xl grid-cols-5 items-end px-2">
         {TABS.slice(0, 2).map((tab) => <Tab key={tab.to} tab={tab} family={family} lang={lang} />)}
         <div />{/* space under the floating mic */}
-        {TABS.slice(2).map((tab) => <Tab key={tab.to} tab={tab} family={family} lang={lang} />)}
+        <Tab tab={TABS[2]} family={family} lang={lang} />
+        {/* Help: says out loud what you can ask, to get people talking to it. */}
+        <button onClick={() => void askIntent('HELP', lang === 'hi' ? 'मैं क्या पूछ सकता हूँ?' : 'What can I ask?')} disabled={busy}
+          className="flex flex-col items-center gap-1 py-2.5 text-mute transition-colors hover:text-slate-200">
+          <span className="grid h-11 w-14 place-items-center rounded-2xl"><Pictogram name="help" className="h-8 w-8" /></span>
+          <span className={`text-[13px] font-bold ${lang === 'hi' ? 'lang-hi leading-none' : ''}`}>{lang === 'hi' ? 'मदद' : 'Help'}</span>
+        </button>
       </div>
     </nav>
   )

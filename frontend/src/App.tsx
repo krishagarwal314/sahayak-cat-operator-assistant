@@ -11,7 +11,6 @@ import MachineHome from './pages/MachineHome'
 import MachineAbout from './pages/MachineAbout'
 import Learn from './pages/Learn'
 import GuidePlayer from './pages/GuidePlayer'
-import SafetySimple from './pages/SafetySimple'
 import Shift from './pages/Shift'
 import MachineSelect from './pages/MachineSelect'
 import Cockpit from './pages/Cockpit'
@@ -76,7 +75,8 @@ export default function App() {
           <Route path="/machine" element={<MachineHome />} />
           <Route path="/machine/about" element={<MachineAbout />} />
           <Route path="/learn" element={<Learn />} />
-          <Route path="/safety" element={<SafetySimple />} />
+          {/* Safety now lives on the machine page. */}
+          <Route path="/safety" element={<Navigate to="/machine" replace />} />
         </Route>
         <Route element={<RequireManager />}>
           <Route path="/manager" element={<Manager />} />

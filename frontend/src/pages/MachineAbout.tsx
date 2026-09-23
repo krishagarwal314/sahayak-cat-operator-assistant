@@ -8,6 +8,7 @@ import type { MachineAbout as About } from '../lib/types'
 import { MachineIcon } from '../components/MachineIcon'
 import { Pictogram } from '../components/Pictogram'
 import { PageHeader, SpeakButton } from '../components/Simple'
+import { VideoCard } from '../components/VideoCard'
 
 const GUIDE_COLOR: Record<string, string> = {
   amber: 'bg-cat/15 text-cat border-cat/40', green: 'bg-ok/15 text-ok border-ok/40',
@@ -29,7 +30,6 @@ export default function MachineAbout() {
   const [about, setAbout] = useState<About | null>(null)
   const [active, setActive] = useState<string | null>(null)
   const [reading, setReading] = useState(false)
-  const [video, setVideo] = useState(false)
   const runRef = useRef(0)
   const refs = useRef<Record<string, HTMLElement | null>>({})
 
@@ -96,6 +96,27 @@ export default function MachineAbout() {
         </span>
       </button>
 
+      {/* ---------------- safety ---------------- */}
+      <section ref={(el) => { refs.current.safety = el }}
+        className={`rounded-[28px] border-2 border-crit/50 bg-crit/[0.08] p-5 transition-all ${ring('safety')}`}>
+        <div className="mb-4 flex items-center gap-3">
+          <Pictogram name="alert" className="h-9 w-9 text-crit" />
+          <h2 className={`flex-1 text-[22px] font-extrabold text-white ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('सबसे पहले सुरक्षा', 'Safety first')}</h2>
+          <SpeakButton onClick={() => readOne('safety')} active={speakingId === 'about-safety'} />
+        </div>
+        <ol className="space-y-3">
+          {about.safety.map((rule, i) => (
+            <li key={rule.en} className="flex items-start gap-3 rounded-2xl bg-ink-900/60 p-3">
+              <span className="relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-crit/15 text-crit">
+                <Pictogram name={rule.icon} className="h-10 w-10" />
+                <span className="absolute -left-2 -top-2 grid h-7 w-7 place-items-center rounded-full bg-crit text-sm font-extrabold text-white">{i + 1}</span>
+              </span>
+              <span className={`pt-1 text-lg leading-snug text-slate-100 ${lang === 'hi' ? 'lang-hi' : ''}`}>{t(rule.hi, rule.en)}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       {/* ---------------- what it is ---------------- */}
       <section ref={(el) => { refs.current.summary = el }}
         className={`rounded-[28px] border-2 border-line bg-ink-800 p-5 transition-all ${ring('summary')}`}>
@@ -130,54 +151,10 @@ export default function MachineAbout() {
         </div>
       </section>
 
-      {/* ---------------- safety ---------------- */}
-      <section ref={(el) => { refs.current.safety = el }}
-        className={`rounded-[28px] border-2 border-crit/50 bg-crit/[0.08] p-5 transition-all ${ring('safety')}`}>
-        <div className="mb-4 flex items-center gap-3">
-          <Pictogram name="alert" className="h-9 w-9 text-crit" />
-          <h2 className={`flex-1 text-[22px] font-extrabold text-white ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('सुरक्षा के नियम', 'Safety rules')}</h2>
-          <SpeakButton onClick={() => readOne('safety')} active={speakingId === 'about-safety'} />
-        </div>
-        <ol className="space-y-3">
-          {about.safety.map((rule, i) => (
-            <li key={rule.en} className="flex items-start gap-3 rounded-2xl bg-ink-900/60 p-3">
-              <span className="relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-crit/15 text-crit">
-                <Pictogram name={rule.icon} className="h-10 w-10" />
-                <span className="absolute -left-2 -top-2 grid h-7 w-7 place-items-center rounded-full bg-crit text-sm font-extrabold text-white">{i + 1}</span>
-              </span>
-              <span className={`pt-1 text-lg leading-snug text-slate-100 ${lang === 'hi' ? 'lang-hi' : ''}`}>{t(rule.hi, rule.en)}</span>
-            </li>
-          ))}
-        </ol>
-      </section>
-
       {/* ---------------- video ---------------- */}
-      <section className="overflow-hidden rounded-[28px] border-2 border-line bg-ink-800">
-        <div className="relative aspect-video w-full bg-black">
-          {video ? (
-            <iframe className="absolute inset-0 h-full w-full" title={about.video.title}
-              src={`https://www.youtube-nocookie.com/embed/${about.video.youtube_id}?autoplay=1&rel=0&modestbranding=1&playsinline=1&cc_load_policy=1&cc_lang_pref=${lang}&hl=${lang}`}
-              allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
-          ) : (
-            <button onClick={() => { stopAll(); setVideo(true) }} className="group absolute inset-0" aria-label="play video">
-              <img src={`https://i.ytimg.com/vi/${about.video.youtube_id}/hqdefault.jpg`} alt=""
-                className="h-full w-full object-cover opacity-80 transition-opacity group-hover:opacity-100" />
-              <span className="absolute inset-0 grid place-items-center">
-                <span className="grid h-24 w-24 place-items-center rounded-full bg-crit text-white shadow-[0_10px_40px_rgba(0,0,0,0.6)] transition-transform group-active:scale-95">
-                  <Pictogram name="play" className="ml-1 h-14 w-14" />
-                </span>
-              </span>
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-3 p-4">
-          <Pictogram name="play" className="h-8 w-8 shrink-0 text-crit" />
-          <div className="min-w-0 flex-1">
-            <p className={`text-lg font-extrabold text-white ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('वीडियो देखें', 'Watch the video')}</p>
-            <p className={`text-sm text-mute ${lang === 'hi' ? 'lang-hi' : ''}`}>{t(about.video.about_hi, about.video.about_en)}</p>
-          </div>
-        </div>
-      </section>
+      <div ref={(el) => { refs.current.video = el }}>
+        <VideoCard video={about.video} highlight={active === 'video'} />
+      </div>
 
       {/* ---------------- guides ---------------- */}
       <section ref={(el) => { refs.current.guides = el }} className={`rounded-[28px] transition-all ${ring('guides')}`}>

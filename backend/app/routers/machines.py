@@ -46,16 +46,21 @@ def about(machine_id: str, _: dict = Depends(security.current_operator)) -> dict
 
     parts_hi = " ".join(f"{p['name_hi']}, {p['what_hi']}" for p in info["parts"])
     parts_en = " ".join(f"{p['name_en']}: {p['what_en']}" for p in info["parts"])
-    safety_hi = " ".join(f"{i}. {s['hi']}" for i, s in enumerate(info["safety"], 1))
-    safety_en = " ".join(f"{i}. {s['en']}" for i, s in enumerate(info["safety"], 1))
+    # "नियम एक। ..." rather than "1. ...": a bare "1." is read with a stray pause.
+    safety_hi = " ".join(f"नियम {i}। {s['hi']}" for i, s in enumerate(info["safety"], 1))
+    safety_en = " ".join(f"Rule {i}. {s['en']}" for i, s in enumerate(info["safety"], 1))
     guides = [db.GUIDES_BY_ID[g] for g in info["guides"] if g in db.GUIDES_BY_ID]
 
+    # Safety is read first. Everything else can wait; this cannot.
     sections = [
+        {"id": "safety", "hi": f"सबसे पहले, इस मशीन पर सुरक्षा के नियम। {safety_hi}",
+         "en": f"First, the safety rules for this machine. {safety_en}"},
         {"id": "summary", "hi": f"{info['identify_hi']} {info['summary_hi']}", "en": f"{info['identify_en']} {info['summary_en']}"},
         {"id": "parts", "hi": f"इसके मुख्य हिस्से। {parts_hi}", "en": f"Its main parts. {parts_en}"},
-        {"id": "safety", "hi": f"इस मशीन पर सुरक्षा के नियम। {safety_hi}", "en": f"Safety rules for this machine. {safety_en}"},
-        {"id": "guides", "hi": "इसे चलाना सीखने के लिए नीचे की तस्वीरें दबाइए। वीडियो भी देख सकते हैं।",
-         "en": "To learn to operate it, tap the pictures below. You can also watch the video."},
+        {"id": "video", "hi": "मशीन कैसे चलाते हैं, यह देखने के लिए नीचे लाल बटन वाली वीडियो पर दबाइए।",
+         "en": "To see how to operate the machine, tap the video with the red play button below."},
+        {"id": "guides", "hi": "कदम कदम सीखने के लिए नीचे की तस्वीरें दबाइए।",
+         "en": "To learn step by step, tap the pictures below."},
     ]
     for section in sections:
         section["speech_hi"] = to_speech(section["hi"], slow=True)
@@ -88,6 +93,8 @@ def detail(machine_id: str, operator: dict = Depends(security.current_operator))
         "current_task": task_service.enrich(current) if current else None,
         "suggestions": assistant.suggestions(machine_id, operator["id"]),
         "supported_intents": sorted(assistant.supported_intents(machine_id)),
+        "video": db.MACHINE_ABOUT.get(machine_id, {}).get("video"),
+        "safety_rules": db.MACHINE_ABOUT.get(machine_id, {}).get("safety", []),
     }
 
 

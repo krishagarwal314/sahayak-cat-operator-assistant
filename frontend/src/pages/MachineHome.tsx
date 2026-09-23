@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useLang } from '../lib/i18n'
@@ -9,6 +9,8 @@ import type { MachineCard, MachineDetail, Reading } from '../lib/types'
 import { MachineIcon } from '../components/MachineIcon'
 import { INTENT_ICON, Pictogram, SENSOR_ICON } from '../components/Pictogram'
 import { PageHeader, SpeakButton, toneOf, useAnswer } from '../components/Simple'
+import { IncidentReport } from '../components/IncidentReport'
+import { VideoCard, type MachineVideo } from '../components/VideoCard'
 
 /** Tapping a tile asks about that sensor, so the answer is spoken, not just shown. */
 const SENSOR_INTENT: Record<string, string> = {
@@ -116,14 +118,51 @@ function Picker() {
 }
 
 // ================================================================ machine view
+interface Warning { key: string; icon: string; severity: 'crit' | 'warn'; hi: string; en: string }
+
+/** Everything that needs the operator's attention right now, most dangerous first. */
+function warningsFor(detail: MachineDetail): Warning[] {
+  const out: Warning[] = []
+  const sensors = detail.telemetry.sensors
+  if (sensors.seatbelt && sensors.seatbelt.value !== 'Fastened') {
+    out.push({ key: 'belt', icon: 'seatbelt', severity: 'crit', hi: 'सीट बेल्ट नहीं लगी है। अभी लगाइए।', en: 'Seatbelt is not fastened. Fasten it now.' })
+  }
+  if (Number(sensors.proximity_objects?.value ?? 0) > 0) {
+    out.push({ key: 'near', icon: 'proximity', severity: 'crit', hi: 'मशीन के पास कोई है। रुकिए और देखिए।', en: 'Someone is near the machine. Stop and look.' })
+  }
+  const findings = [...detail.health.findings]
+    .filter((f) => f.severity !== 'info' && !/SEATBELT|PROXIMITY/.test(f.code))
+    .sort((a, b) => (a.severity === 'critical' ? 0 : 1) - (b.severity === 'critical' ? 0 : 1))
+  for (const f of findings) {
+    const icon = /FUEL/.test(f.code) ? 'fuel' : /IDL/.test(f.code) ? 'idle' : /THERMAL|TEMP/.test(f.code) ? 'temp'
+      : /TIRE/.test(f.code) ? 'tire' : /UNDERCARRIAGE|TRACK/.test(f.code) ? 'track' : /SERVICE/.test(f.code) ? 'wrench' : 'alert'
+    out.push({ key: f.code, icon, severity: f.severity === 'critical' ? 'crit' : 'warn', hi: f.title.hi, en: f.title.en })
+  }
+  return out.slice(0, 5)
+}
+
+/** Make sure a line ends in a full stop: the voice only pauses where one is. */
+const endSentence = (text: string, stop: string) => (/[।.!?]$/.test(text.trim()) ? text.trim() : `${text.trim()}${stop}`)
+
+function safetySpeech(warnings: Warning[], lang: 'hi' | 'en'): string {
+  if (lang === 'hi') {
+    return warnings.length
+      ? `सबसे पहले सुरक्षा। ध्यान दीजिए। ${warnings.map((w, i) => `नंबर ${i + 1}। ${endSentence(w.hi, '।')}`).join(' ')}`
+      : 'सबसे पहले सुरक्षा। सब ठीक है। सीट बेल्ट लगी है और आसपास कोई नहीं है।'
+  }
+  return warnings.length
+    ? `Safety first. Please note. ${warnings.map((w, i) => `Number ${i + 1}. ${endSentence(w.en, '.')}`).join(' ')}`
+    : 'Safety first. All clear. Your seatbelt is on and nobody is nearby.'
+}
+
 function MachineView({ onChange }: { onChange: () => void }) {
   const { lang } = useLang()
   const navigate = useNavigate()
   const { machineId } = useSession()
-  const { speak, speakingId } = useVoiceOut()
+  const { speak, stop, speakingId } = useVoiceOut()
   const { askIntent, busy } = useAnswer()
-  const { replay } = usePageIntro('machine', speak)
-  const [detail, setDetail] = useState<MachineDetail | null>(null)
+  const [detail, setDetail] = useState<(MachineDetail & { video?: MachineVideo }) | null>(null)
+  const spokenFor = useRef<string | null>(null)
 
   const load = useCallback(() => {
     if (machineId) api.machine(machineId).then(setDetail).catch(() => undefined)
@@ -131,63 +170,119 @@ function MachineView({ onChange }: { onChange: () => void }) {
 
   useEffect(() => {
     load()
-    const timer = window.setInterval(() => {
-      if (machineId) api.telemetry(machineId).then((telemetry) => setDetail((d) => d && { ...d, telemetry })).catch(() => undefined)
-    }, 6000)
+    const timer = window.setInterval(load, 8000)
     return () => window.clearInterval(timer)
-  }, [load, machineId])
+  }, [load])
+
+  const warnings = detail ? warningsFor(detail) : []
+  const arrival = detail ? `${safetySpeech(warnings, lang)} ${lang === 'hi'
+    ? 'मशीन कैसे चलाते हैं, यह देखने के लिए लाल बटन वाली वीडियो दबाइए। कुछ भी पूछना हो तो माइक दबाकर बोलिए।'
+    : 'To see how to operate the machine, tap the video with the red button. To ask anything, hold the mic and speak.'}` : ''
+
+  // On arrival: safety first, then how to use this page. Once per machine.
+  useEffect(() => {
+    if (!detail) return
+    const stamp = `${detail.machine.id}:${lang}`
+    if (spokenFor.current === stamp) return
+    spokenFor.current = stamp
+    const timer = window.setTimeout(() => void speak(arrival, lang, 'intro-machine', true), 450)
+    return () => window.clearTimeout(timer)
+  }, [detail, lang]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!detail) return <div className="h-64 animate-pulse rounded-3xl bg-ink-800" />
 
-  const { machine, telemetry, health } = detail
-  const verdict = health.counts.critical ? 'crit' : health.counts.warning ? 'warn' : 'ok'
-  const tone = toneOf(verdict)
-  const issues = health.counts.critical + health.counts.warning
-  const verdictText = verdict === 'ok'
-    ? (lang === 'hi' ? 'सब ठीक है' : 'All good')
-    : verdict === 'crit'
-      ? (lang === 'hi' ? 'रुकिए! खतरा है' : 'Stop! Danger')
-      : (lang === 'hi' ? `${issues} बातों पर ध्यान दें` : `${issues} things to check`)
-  const tiles = (TILES[machine.family] ?? TILES.excavator).map((k) => telemetry.sensors[k]).filter(Boolean) as Reading[]
+  const { machine, telemetry } = detail
+  const t = (hi: string, en: string) => (lang === 'hi' ? hi : en)
+  const beltOn = telemetry.sensors.seatbelt?.value === 'Fastened'
+  const near = Number(telemetry.sensors.proximity_objects?.value ?? 0) > 0
+  const tiles = (TILES[machine.family] ?? TILES.excavator)
+    .filter((k) => k !== 'seatbelt')
+    .map((k) => telemetry.sensors[k]).filter(Boolean) as Reading[]
+  const anyCrit = warnings.some((w) => w.severity === 'crit')
 
   return (
     <div className="space-y-5">
       <PageHeader icon={<MachineIcon family={machine.family} className="h-10 w-12" />}
         title={lang === 'hi' ? machine.short_hi : machine.model}
-        onReplay={replay} speaking={speakingId === 'intro-machine'} />
+        onReplay={() => (speakingId === 'intro-machine' ? stop() : void speak(arrival, lang, 'intro-machine', true))}
+        speaking={speakingId === 'intro-machine'} />
 
-      {/* the verdict, in one glance */}
-      <button onClick={() => void askIntent('MACHINE_HEALTH', verdictText)} disabled={busy}
-        className={`flex w-full items-center gap-5 rounded-[28px] p-5 text-left ring-4 transition-all active:scale-[0.98] ${tone.bg} ${tone.ring}`}>
-        <div className={`grid h-24 w-24 shrink-0 place-items-center rounded-full ${tone.solid} text-ink-900`}>
-          <Pictogram name={tone.icon} className="h-16 w-16" />
+      {/* ---------------- safety first ---------------- */}
+      <section className={`rounded-[28px] border-2 p-5 ${warnings.length
+        ? (anyCrit ? 'border-crit bg-crit/[0.09]' : 'border-warn bg-warn/[0.08]') : 'border-ok/60 bg-ok/[0.07]'}`}>
+        <div className="mb-4 flex items-center gap-3">
+          <Pictogram name="shield" className={`h-10 w-10 ${warnings.length ? (anyCrit ? 'text-crit' : 'text-warn') : 'text-ok'}`} />
+          <h2 className={`flex-1 text-[24px] font-extrabold text-white ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('सबसे पहले सुरक्षा', 'Safety first')}</h2>
+          <SpeakButton active={speakingId === 'safety'}
+            onClick={() => (speakingId === 'safety' ? stop() : void speak(safetySpeech(warnings, lang), lang, 'safety', true))} />
         </div>
-        <div className="min-w-0 flex-1">
-          <div className={`text-[28px] font-extrabold leading-tight ${tone.text} ${lang === 'hi' ? 'lang-hi' : ''}`}>{verdictText}</div>
-          <div className={`mt-1 flex items-center gap-2 text-base text-slate-300 ${lang === 'hi' ? 'lang-hi' : ''}`}>
-            <Pictogram name="speaker" className="h-5 w-5" />{lang === 'hi' ? 'सुनने के लिए दबाइए' : 'Tap to hear'}
+
+        {warnings.length === 0 ? (
+          <div className="flex items-center gap-3 rounded-2xl bg-ink-900/50 p-4">
+            <Pictogram name="check" className="h-12 w-12 shrink-0 text-ok" />
+            <p className={`text-xl font-bold text-ok ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('सब सुरक्षित है', 'All clear')}</p>
           </div>
-        </div>
-      </button>
+        ) : (
+          <ol className="space-y-2.5">
+            {warnings.map((w, i) => {
+              const tone = toneOf(w.severity)
+              return (
+                <li key={w.key} className="flex items-center gap-3 rounded-2xl bg-ink-900/60 p-3">
+                  <span className={`relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl ${tone.bg} ${tone.text}`}>
+                    <Pictogram name={w.icon} className="h-10 w-10" />
+                    <span className={`absolute -left-2 -top-2 grid h-7 w-7 place-items-center rounded-full text-sm font-extrabold text-ink-900 ${tone.solid}`}>{i + 1}</span>
+                  </span>
+                  <span className={`text-lg font-semibold leading-snug text-slate-100 ${lang === 'hi' ? 'lang-hi' : ''}`}>{t(w.hi, w.en)}</span>
+                </li>
+              )
+            })}
+          </ol>
+        )}
 
-      {/* the readings that matter, as pictures */}
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          {[
+            { key: 'belt', icon: 'seatbelt', ok: beltOn, intent: 'SEATBELT_STATUS', label: t('सीट बेल्ट', 'Seatbelt'),
+              value: beltOn ? t('लगी है', 'On') : t('नहीं लगी', 'Off') },
+            { key: 'near', icon: 'proximity', ok: !near, intent: 'PROXIMITY_HAZARD', label: t('आसपास', 'Around'),
+              value: near ? t('कोई है!', 'Someone!') : t('साफ़', 'Clear') },
+          ].map((card) => {
+            const tone = toneOf(card.ok ? 'ok' : 'crit')
+            return (
+              <button key={card.key} onClick={() => void askIntent(card.intent, card.label)} disabled={busy}
+                className={`relative flex flex-col items-center gap-1 rounded-3xl bg-ink-900/60 p-4 ring-2 transition-all active:scale-95 ${tone.ring}`}>
+                <span className={`absolute right-2.5 top-2.5 ${tone.text}`}><Pictogram name={tone.icon} className="h-6 w-6" /></span>
+                <Pictogram name={card.icon} className={`h-14 w-14 ${tone.text}`} />
+                <span className={`text-base font-bold text-slate-300 ${lang === 'hi' ? 'lang-hi' : ''}`}>{card.label}</span>
+                <span className={`text-xl font-extrabold ${tone.text} ${lang === 'hi' ? 'lang-hi' : ''}`}>{card.value}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="mt-4">
+          <IncidentReport machineId={machine.id} onSent={load} />
+        </div>
+      </section>
+
+      {/* ---------------- how to operate: the video ---------------- */}
+      {detail.video && <VideoCard video={detail.video} />}
+
+      {/* ---------------- readings ---------------- */}
       <div className="grid grid-cols-2 gap-3">
         {tiles.map((reading) => {
-          const t = toneOf(reading.status)
+          const tone = toneOf(reading.status)
           const label = lang === 'hi' ? reading.label_hi : reading.label_en
           const intent = SENSOR_INTENT[reading.key]
           return (
             <button key={reading.key} disabled={busy || !intent}
               onClick={() => intent && void askIntent(intent, label)}
               className={`relative flex flex-col items-start gap-2 rounded-3xl border-2 bg-ink-800 p-4 text-left transition-all active:scale-95
-                ${reading.status === 'ok' ? 'border-line' : t.border}`}>
-              <span className={`absolute right-3 top-3 ${t.text}`}><Pictogram name={t.icon} className="h-7 w-7" /></span>
-              <Pictogram name={SENSOR_ICON[reading.key] ?? 'gauge'} className={`h-12 w-12 ${reading.status === 'ok' ? 'text-cat' : t.text}`} />
+                ${reading.status === 'ok' ? 'border-line' : tone.border}`}>
+              <span className={`absolute right-3 top-3 ${tone.text}`}><Pictogram name={tone.icon} className="h-7 w-7" /></span>
+              <Pictogram name={SENSOR_ICON[reading.key] ?? 'gauge'} className={`h-12 w-12 ${reading.status === 'ok' ? 'text-cat' : tone.text}`} />
               <div className="flex items-baseline gap-1.5">
-                {/* Numbers in the tabular face; words in the Devanagari face, which
-                    the monospace font breaks apart. */}
                 <span className={`${typeof reading.value === 'number' ? 'font-mono text-[34px]' : `text-[26px] ${lang === 'hi' ? 'lang-hi' : ''}`}
-                  font-bold leading-none ${reading.status === 'ok' ? 'text-white' : t.text}`}>
+                  font-bold leading-none ${reading.status === 'ok' ? 'text-white' : tone.text}`}>
                   {shortValue(reading, lang)}
                 </span>
                 {typeof reading.value === 'number' && (
@@ -200,20 +295,20 @@ function MachineView({ onChange }: { onChange: () => void }) {
         })}
       </div>
 
-      {/* questions as pictures */}
+      {/* ---------------- questions as pictures ---------------- */}
       {detail.suggestions.length > 0 && (
         <div>
           <p className={`mb-3 flex items-center gap-2 text-lg font-bold text-slate-200 ${lang === 'hi' ? 'lang-hi' : ''}`}>
-            <Pictogram name="help" className="h-7 w-7 text-cat" />{lang === 'hi' ? 'दबाकर पूछें' : 'Tap to ask'}
+            <Pictogram name="help" className="h-7 w-7 text-cat" />{t('दबाकर पूछें', 'Tap to ask')}
           </p>
           <div className="grid grid-cols-1 gap-2">
-            {detail.suggestions.map((s) => {
-              const label = lang === 'hi' ? s.label_hi : s.label_en
+            {detail.suggestions.map((sug) => {
+              const label = lang === 'hi' ? sug.label_hi : sug.label_en
               return (
-                <button key={s.id} onClick={() => void askIntent(s.intent, label)} disabled={busy}
+                <button key={sug.id} onClick={() => void askIntent(sug.intent, label)} disabled={busy}
                   className="flex min-h-[64px] items-center gap-4 rounded-2xl bg-ink-800 px-4 py-3 text-left transition-all active:scale-[0.98]">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-cat/15 text-cat">
-                    <Pictogram name={INTENT_ICON[s.intent] ?? 'help'} className="h-8 w-8" />
+                    <Pictogram name={INTENT_ICON[sug.intent] ?? 'help'} className="h-8 w-8" />
                   </span>
                   <span className={`text-lg font-semibold text-white ${lang === 'hi' ? 'lang-hi' : ''}`}>{label}</span>
                 </button>
@@ -226,11 +321,11 @@ function MachineView({ onChange }: { onChange: () => void }) {
       <div className="grid grid-cols-2 gap-3">
         <button onClick={() => navigate('/machine/about')}
           className="flex h-20 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-cat/50 bg-cat/10 text-base font-bold text-cat">
-          <Pictogram name="book" className="h-8 w-8" />{lang === 'hi' ? 'मशीन की जानकारी' : 'About this machine'}
+          <Pictogram name="book" className="h-8 w-8" />{t('मशीन की जानकारी', 'About this machine')}
         </button>
         <button onClick={onChange}
           className="flex h-20 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-line text-base font-bold text-slate-200">
-          <Pictogram name="switch" className="h-8 w-8" />{lang === 'hi' ? 'मशीन बदलें' : 'Change machine'}
+          <Pictogram name="switch" className="h-8 w-8" />{t('मशीन बदलें', 'Change machine')}
         </button>
       </div>
     </div>

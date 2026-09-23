@@ -23,8 +23,8 @@ export const PAGE_INTROS = {
     en: 'Choose your machine. Tap its picture, or press the mic and say its name.',
   },
   machine: {
-    hi: 'यह आपकी मशीन का पेज है। कुछ भी पूछने के लिए माइक बटन दबाकर बोलिए।',
-    en: 'This is your machine. Press the mic button to ask anything.',
+    hi: 'यह आपकी मशीन का पेज है। सबसे पहले सुरक्षा की बातें सुनिए। मशीन चलाना देखने के लिए वीडियो दबाइए।',
+    en: 'This is your machine. Hear the safety points first. Tap the video to see how to operate it.',
   },
   learn: {
     hi: 'यहाँ मशीन चलाना सीखिए। जो सीखना है उसकी तस्वीर दबाइए।',
@@ -33,10 +33,6 @@ export const PAGE_INTROS = {
   guide: {
     hi: 'हर कदम ध्यान से सुनिए। आगे जाने के लिए हरा बटन दबाइए।',
     en: 'Listen to each step. Press the green button to go on.',
-  },
-  safety: {
-    hi: 'यह सुरक्षा का पेज है। कोई दुर्घटना हो तो लाल बटन दबाइए।',
-    en: 'This is the safety page. If something happens, press the red button.',
   },
 } as const
 
