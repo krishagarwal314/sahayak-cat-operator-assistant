@@ -10,7 +10,8 @@
  */
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { api } from '../lib/api'
+import { api, prefetchSpeech } from '../lib/api'
+import { PAGE_INTROS } from '../lib/intros'
 import { useLang } from '../lib/i18n'
 import { useSession } from '../lib/session'
 import { useVoiceOut } from '../lib/speechContext'
@@ -307,6 +308,12 @@ export function SimpleShell({ children }: { children: React.ReactNode }) {
     if (!machineId) return
     api.machine(machineId).then((d) => setFamily(d.machine.family)).catch(() => undefined)
   }, [machineId])
+
+  // Every page intro, generated once in the background right after login, so
+  // no page ever waits for its own voice.
+  useEffect(() => {
+    for (const intro of Object.values(PAGE_INTROS)) prefetchSpeech(intro[lang], lang, true)
+  }, [lang])
 
   const show = useCallback((result: AskResult) => {
     setError('')

@@ -59,6 +59,24 @@ def available() -> bool:
     return registry.get(_KEY, _load) is not None
 
 
+def warm() -> bool:
+    """Load, then run one second of silence through the model.
+
+    On a GPU the first call pays for CUDA kernel start-up (a second or more);
+    better at boot than on the first question.
+    """
+    bundle = registry.get(_KEY, _load) if settings.enable_stt else None
+    if bundle is None:
+        return False
+    try:
+        import numpy as np
+
+        bundle["pipe"]({"raw": np.zeros(16000, dtype="float32"), "sampling_rate": 16000})
+    except Exception as exc:  # noqa: BLE001 - a failed warm-up is not a failed model
+        log.debug("stt warm-up failed: %s", exc)
+    return True
+
+
 # --------------------------------------------------------------------------
 # audio decoding
 # --------------------------------------------------------------------------

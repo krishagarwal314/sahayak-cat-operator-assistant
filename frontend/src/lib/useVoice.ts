@@ -46,8 +46,6 @@ export function useVoice(opts: {
     setTranscript(question)
     setState('processing')
     try {
-      // A short pause so it reads as "thinking", not as a canned reply.
-      await new Promise((r) => window.setTimeout(r, 600))
       const result = await api.ask({
         machine_id: machineId, text: question, intent: line.intent, language: lang, speak,
       })

@@ -128,6 +128,9 @@ print('failed' if role in r['failed'] else ('loaded' if role in r['loaded'] else
          printf '  %s %s (optional, state: %s)\n' "$(green '[--]')" "$label" "$state"; fi ;;
   esac
 }
+DEVICE=$(printf '%s' "$MODELS" | "$PY" -c "import sys,json; print(json.load(sys.stdin)['registry']['device'])" 2>/dev/null)
+if [[ "$DEVICE" == "cuda" ]]; then ok "running on the GPU"; else
+  printf '  %s %s\n' "$(green '[--]')" "running on ${DEVICE:-cpu} (a GPU makes speech faster)"; fi
 check_model stt   "speech to text (Hindi)"   yes
 check_model tts   "text to speech (Hindi)"   yes
 check_model tts_en "text to speech (English)" yes

@@ -162,7 +162,7 @@ def startup() -> None:
         log.info("eager loading models ...")
         for name, warm in (
             ("embedder", intent_embedder.warm),
-            ("stt", stt.available),
+            ("stt", stt.warm),
             ("tts", tts.available),
             ("tts_en", tts.available_en),
             ("translate", translate.available),
