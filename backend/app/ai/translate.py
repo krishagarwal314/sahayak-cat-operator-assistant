@@ -110,16 +110,29 @@ def translate(text: str, *, source: str = "en", target: str = "hi") -> Translati
 
     try:
         if family == "indictrans2":
+            processor = bundle["processor"]
+            if processor is None:
+                # IndicTrans2 is trained on input that carries explicit source and
+                # target language tags, which IndicProcessor prepends. Feeding it
+                # bare text produces unreliable output - sometimes the wrong
+                # language entirely. Refusing here sends the caller to the curated
+                # Hindi fallback, which is correct by construction.
+                log.warning(
+                    "IndicTrans2 selected but IndicTransToolkit is missing; refusing to "
+                    "translate rather than emit unreliable Hindi. Install it with "
+                    "`pip install IndicTransToolkit`, or set "
+                    "TRANSLATE_MODEL=facebook/nllb-200-distilled-600M."
+                )
+                return None
             src_code = _INDICTRANS_CODES.get(source, "eng_Latn")
             tgt_code = _INDICTRANS_CODES.get(target, "hin_Deva")
-            processor = bundle["processor"]
-            batch = processor.preprocess_batch([text], src_lang=src_code, tgt_lang=tgt_code) if processor else [text]
+            batch = processor.preprocess_batch([text], src_lang=src_code, tgt_lang=tgt_code)
             enc = tokenizer(batch, truncation=True, padding="longest", return_tensors="pt", max_length=256)
             enc = {k: v.to(bundle["device"]) for k, v in enc.items()}
             with torch.inference_mode():
                 generated = model.generate(**enc, max_length=256, num_beams=5, min_length=0)
             decoded = tokenizer.batch_decode(generated, skip_special_tokens=True)
-            out = processor.postprocess_batch(decoded, lang=tgt_code)[0] if processor else decoded[0]
+            out = processor.postprocess_batch(decoded, lang=tgt_code)[0]
 
         elif family == "nllb":
             tokenizer.src_lang = _NLLB_CODES.get(source, "eng_Latn")
@@ -151,9 +164,17 @@ def translate_many(texts: list[str], *, source: str = "en", target: str = "hi") 
 
 
 def info() -> dict:
-    return {
+    out = {
         "model": settings.translate_model,
         "family": _family(),
         "enabled": settings.enable_translate,
         "cached_phrases": len(_MEMO),
     }
+    if _family() == "indictrans2":
+        try:
+            import IndicTransToolkit  # noqa: F401
+
+            out["indictrans_toolkit"] = "installed"
+        except Exception:
+            out["indictrans_toolkit"] = "MISSING - translation will fall back to curated Hindi"
+    return out
