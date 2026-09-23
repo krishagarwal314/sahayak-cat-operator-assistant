@@ -25,7 +25,9 @@ from . import registry
 
 log = logging.getLogger("saathi.tts")
 
-_KEY = "tts"
+# Registry keys per language. Hindi keeps the plain "tts" key that the status
+# page and the self check already look for.
+_KEYS = {"hi": "tts", "en": "tts_en"}
 
 
 @dataclass
@@ -42,12 +44,21 @@ def _is_indicf5() -> bool:
     return "indicf5" in settings.tts_model.lower()
 
 
-def _load():
+def _model_for(language: str) -> str:
+    return settings.tts_model_en if language == "en" else settings.tts_model
+
+
+def _loader(language: str):
+    return lambda: _load(language)
+
+
+def _load(language: str = "hi"):
     import torch
 
     device = registry.resolve_device()
+    name = _model_for(language)
 
-    if _is_indicf5():
+    if language != "en" and _is_indicf5():
         from transformers import AutoModel
 
         model = AutoModel.from_pretrained(settings.tts_model, trust_remote_code=True)
@@ -56,8 +67,8 @@ def _load():
 
     from transformers import AutoTokenizer, VitsModel
 
-    tokenizer = AutoTokenizer.from_pretrained(settings.tts_model)
-    model = VitsModel.from_pretrained(settings.tts_model)
+    tokenizer = AutoTokenizer.from_pretrained(name)
+    model = VitsModel.from_pretrained(name)
     model.to(device).eval()
     return {
         "engine": "vits",
@@ -69,10 +80,15 @@ def _load():
     }
 
 
-def available() -> bool:
+def available(language: str = "hi") -> bool:
     if not settings.enable_tts:
         return False
-    return registry.get(_KEY, _load) is not None
+    language = "en" if language == "en" else "hi"
+    return registry.get(_KEYS[language], _loader(language)) is not None
+
+
+def available_en() -> bool:
+    return available("en")
 
 
 def _to_wav_bytes(audio, sample_rate: int) -> bytes:
@@ -116,10 +132,10 @@ def _synth_indicf5(bundle: dict, text: str):
 
 def prepare(text: str, *, language: str = "hi", slow: bool = False) -> str:
     """The exact string the model will be asked to read."""
-    if language != "hi":
-        return (text or "").strip()
-    from ..services.speech_text import to_speech
+    from ..services.speech_text import to_speech, to_speech_en
 
+    if language == "en":
+        return to_speech_en(text, slow=slow)
     return to_speech(text, slow=slow)
 
 
@@ -136,10 +152,11 @@ def synthesize(text: str, *, language: str = "hi", slow: bool = False) -> Speech
 
     from ..services.speech_text import phrases
 
+    language = "en" if language == "en" else "hi"
     text = prepare(text, language=language, slow=slow)
     if not text or not settings.enable_tts:
         return None
-    bundle = registry.get(_KEY, _load)
+    bundle = registry.get(_KEYS[language], _loader(language))
     if bundle is None:
         return None
 
@@ -177,13 +194,14 @@ def synthesize(text: str, *, language: str = "hi", slow: bool = False) -> Speech
         duration_s=round(len(audio) / sample_rate, 2) if sample_rate else 0.0,
         latency_ms=round((time.perf_counter() - started) * 1000, 1),
         engine=bundle["engine"],
-        model=settings.tts_model,
+        model=_model_for(language),
     )
 
 
 def info() -> dict:
     return {
         "model": settings.tts_model,
+        "model_en": settings.tts_model_en,
         "engine": "indicf5" if _is_indicf5() else "vits",
         "enabled": settings.enable_tts,
         "needs_reference_audio": _is_indicf5(),

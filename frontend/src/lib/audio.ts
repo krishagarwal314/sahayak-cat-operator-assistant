@@ -99,13 +99,83 @@ export class LevelMeter {
 }
 
 // -------------------------------------------------------------- playback
-let currentAudio: HTMLAudioElement | null = null
+/*
+ * One shared audio element for the whole app.
+ *
+ * Strict browsers (Brave, Safari, Chrome on some sites) only let a page play
+ * sound from an element that was started inside a user tap. A page intro is
+ * fetched and played a second or two AFTER the tap that opened the page, so a
+ * brand new Audio() for it was refused - silently, because the rejection was
+ * caught and ignored. Instead we create one element, start it once inside the
+ * very first tap (unlockAudio, with a silent clip), and reuse that same
+ * element for everything afterwards. Browsers keep an unlocked element
+ * unlocked.
+ */
+let shared: HTMLAudioElement | null = null
+let unlocked = false
+let playing = false
+let finishCurrent: ((result: PlayResult) => void) | null = null
+
+export type PlayResult = 'ended' | 'blocked' | 'error' | 'stopped'
+
+function sharedAudio(): HTMLAudioElement {
+  if (!shared) {
+    shared = new Audio()
+    shared.preload = 'auto'
+  }
+  return shared
+}
+
+/** A 50 ms silent WAV, built in memory, used only to unlock audio. */
+function silentWav(): string {
+  const samples = 400, rate = 8000
+  const buffer = new ArrayBuffer(44 + samples * 2)
+  const v = new DataView(buffer)
+  const text = (offset: number, value: string) => [...value].forEach((c, i) => v.setUint8(offset + i, c.charCodeAt(0)))
+  text(0, 'RIFF'); v.setUint32(4, 36 + samples * 2, true); text(8, 'WAVE'); text(12, 'fmt ')
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true)
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true)
+  text(36, 'data'); v.setUint32(40, samples * 2, true)
+  let binary = ''
+  new Uint8Array(buffer).forEach((b) => { binary += String.fromCharCode(b) })
+  return `data:audio/wav;base64,${btoa(binary)}`
+}
+
+/** Call from inside a user gesture. Safe to call repeatedly. */
+export function unlockAudio(): void {
+  if (unlocked) return
+  const audio = sharedAudio()
+  if (!playing) {
+    audio.src = silentWav()
+    void audio.play().then(() => { unlocked = true }).catch(() => undefined)
+  }
+  // iOS needs speech synthesis woken from a gesture as well.
+  if ('speechSynthesis' in window && !window.speechSynthesis.speaking) {
+    const wake = new SpeechSynthesisUtterance(' ')
+    wake.volume = 0
+    window.speechSynthesis.speak(wake)
+  }
+}
+
+/** Install once: the first tap or key press anywhere unlocks audio. */
+export function installAudioUnlock(): void {
+  const handler = () => {
+    unlockAudio()
+    if (unlocked) {
+      window.removeEventListener('pointerdown', handler, true)
+      window.removeEventListener('keydown', handler, true)
+    }
+  }
+  window.addEventListener('pointerdown', handler, true)
+  window.addEventListener('keydown', handler, true)
+}
 
 export function stopSpeaking(): void {
-  if (currentAudio) {
-    currentAudio.pause()
-    currentAudio.src = ''
-    currentAudio = null
+  if (finishCurrent) finishCurrent('stopped')
+  if (shared) {
+    shared.pause()
+    shared.removeAttribute('src')
+    shared.load()
   }
   if ('speechSynthesis' in window) window.speechSynthesis.cancel()
 }
@@ -117,38 +187,36 @@ function base64ToBlob(base64: string, mime: string): Blob {
   return new Blob([bytes], { type: mime })
 }
 
-export function playBase64(base64: string, mime = 'audio/wav'): Promise<void> {
+function playUrl(url: string): Promise<PlayResult> {
   stopSpeaking()
-  const url = URL.createObjectURL(base64ToBlob(base64, mime))
-  const audio = new Audio(url)
-  currentAudio = audio
+  const audio = sharedAudio()
   return new Promise((resolve) => {
-    const finish = () => {
+    const finish = (result: PlayResult) => {
+      if (finishCurrent !== finish) return
+      finishCurrent = null
+      playing = false
+      audio.onended = null
+      audio.onerror = null
       URL.revokeObjectURL(url)
-      if (currentAudio === audio) currentAudio = null
-      resolve()
+      resolve(result)
     }
-    audio.onended = finish
-    audio.onerror = finish
-    void audio.play().catch(finish)
+    finishCurrent = finish
+    audio.onended = () => finish('ended')
+    audio.onerror = () => finish('error')
+    audio.src = url
+    playing = true
+    audio.play().then(() => { unlocked = true }).catch((err: DOMException) => {
+      finish(err?.name === 'NotAllowedError' ? 'blocked' : 'error')
+    })
   })
 }
 
-export function playBlob(blob: Blob): Promise<void> {
-  stopSpeaking()
-  const url = URL.createObjectURL(blob)
-  const audio = new Audio(url)
-  currentAudio = audio
-  return new Promise((resolve) => {
-    const finish = () => {
-      URL.revokeObjectURL(url)
-      if (currentAudio === audio) currentAudio = null
-      resolve()
-    }
-    audio.onended = finish
-    audio.onerror = finish
-    void audio.play().catch(finish)
-  })
+export function playBase64(base64: string, mime = 'audio/wav'): Promise<PlayResult> {
+  return playUrl(URL.createObjectURL(base64ToBlob(base64, mime)))
+}
+
+export function playBlob(blob: Blob): Promise<PlayResult> {
+  return playUrl(URL.createObjectURL(blob))
 }
 
 /** Browser speech synthesis, used when the TTS model is not available. */

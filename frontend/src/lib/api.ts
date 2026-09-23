@@ -2,6 +2,7 @@ import type {
   AskResult, Briefing, MachineCard, MachineDetail, Operator,
   SafetyReport, Suggestion, Task, Telemetry, TrainingModule, Instructor,
   FaceStatus, FaceLoginResult, FaceEnrollResult, SessionResult, GuideSummary, Guide,
+  ManagerOptions, ManagerOverview, TaskDraft, Estimate, MachineAbout,
 } from './types'
 
 const TOKEN_KEY = 'sahayak.token'
@@ -72,6 +73,7 @@ export const api = {
     request<{ machine: any; suggestions: Suggestion[] }>(
       '/api/machines/select', { method: 'POST', ...json({ machine_id: machineId }) }),
   machine: (machineId: string) => request<MachineDetail>(`/api/machines/${machineId}`),
+  machineAbout: (machineId: string) => request<MachineAbout>(`/api/machines/${machineId}/about`),
   telemetry: (machineId: string) => request<Telemetry>(`/api/machines/${machineId}/telemetry`),
   series: (machineId: string, sensor: string, points = 24) =>
     request<{ points: { minute: number; value: number }[] }>(
@@ -144,6 +146,22 @@ export const api = {
   guides: (machineId?: string) =>
     request<GuideSummary[]>(`/api/guides${machineId ? `?machine_id=${machineId}` : ''}`),
   guide: (guideId: string) => request<Guide>(`/api/guides/${guideId}`),
+
+  // ---- manager ----
+  managerOptions: () => request<ManagerOptions>('/api/manager/options'),
+  managerOverview: () => request<ManagerOverview>('/api/manager/overview'),
+  managerEstimate: (draft: TaskDraft) =>
+    request<Estimate & { certification: { certified: boolean; skill: number | null } }>(
+      '/api/manager/estimate', { method: 'POST', ...json(draft) }),
+  managerTranslate: (fields: { title: string; instructions: string; safety_note: string; location: string }) =>
+    request<{ hi: Record<string, string | null>; engine: string | null; available: boolean; note: string | null }>(
+      '/api/manager/translate', { method: 'POST', ...json(fields) }),
+  managerCreateTask: (draft: TaskDraft) =>
+    request<{ task: Task; message: string }>('/api/manager/tasks', { method: 'POST', ...json(draft) }),
+  managerUpdateTask: (taskId: string, patch: Partial<Pick<Task, 'status' | 'priority' | 'planned_start' | 'planned_minutes'>> & { operator_id?: string; machine_id?: string }) =>
+    request<{ task: Task }>(`/api/manager/tasks/${taskId}`, { method: 'PATCH', ...json(patch) }),
+  managerDeleteTask: (taskId: string) =>
+    request<{ removed: string }>(`/api/manager/tasks/${taskId}`, { method: 'DELETE' }),
 
   // ---- system ----
   systemModels: () => request<any>('/api/system/models'),

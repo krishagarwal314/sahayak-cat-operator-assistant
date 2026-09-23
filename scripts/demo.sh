@@ -105,6 +105,7 @@ print('failed' if role in r['failed'] else ('loaded' if role in r['loaded'] else
 }
 check_model stt   "speech to text (Hindi)"   yes
 check_model tts   "text to speech (Hindi)"   yes
+check_model tts_en "text to speech (English)" yes
 check_model embedder "semantic intent matching" no
 check_model face  "face login (camera)"      no
 
@@ -143,6 +144,13 @@ else:
 
   printf '%s' "$RESULT" | grep -q '"audio": *{' && ok "Hindi speech generated" \
     || bad "no audio returned - browser will synthesise instead (demo still works)"
+
+  # English goes through its own voice model - check it separately.
+  EN_RESULT=$(curl -fsS -X POST "http://localhost:${PORT}/api/assistant/ask" \
+    -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+    -d '{"machine_id":"EXC001","text":"how much fuel is left","language":"en","speak":true}' 2>/dev/null)
+  printf '%s' "$EN_RESULT" | grep -q '"audio": *{' && ok "English speech generated" \
+    || bad "no English audio - browser will synthesise instead (demo still works)"
 fi
 
 # ---------------------------------------------------------------- summary

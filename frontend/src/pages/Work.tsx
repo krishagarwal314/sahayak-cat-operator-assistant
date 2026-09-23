@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useLang } from '../lib/i18n'
@@ -23,7 +23,31 @@ export default function Work() {
   const { replay } = usePageIntro('work', speak)
   const [briefing, setBriefing] = useState<Briefing | null>(null)
 
-  useEffect(() => { api.briefing().then(setBriefing).catch(() => undefined) }, [])
+  const knownIds = useRef<Set<string> | null>(null)
+  const [fresh, setFresh] = useState<Set<string>>(new Set())
+
+  // Poll for work the manager assigns while the operator is on this screen, and
+  // say so out loud - someone who is not looking at the phone still finds out.
+  useEffect(() => {
+    let alive = true
+    const load = () => api.briefing().then((b) => {
+      if (!alive) return
+      const ids = new Set(b.tasks.map((t) => t.id))
+      if (knownIds.current) {
+        const added = b.tasks.filter((t) => !knownIds.current!.has(t.id))
+        if (added.length) {
+          setFresh(new Set(added.map((t) => t.id)))
+          const title = lang === 'hi' ? (added[0].hi.title ?? added[0].title_en) : added[0].title_en
+          void speak(lang === 'hi' ? `नया काम आया है। ${title}।` : `New work has arrived. ${title}.`, lang, 'new-task', true)
+        }
+      }
+      knownIds.current = ids
+      setBriefing(b)
+    }).catch(() => undefined)
+    void load()
+    const timer = window.setInterval(load, 15000)
+    return () => { alive = false; window.clearInterval(timer) }
+  }, [lang, speak])
 
   async function setStatus(task: Task, status: Task['status']) {
     const updated = await api.setTaskStatus(task.id, status)
@@ -70,8 +94,13 @@ export default function Work() {
 
         return (
           <article key={task.id}
-            className={`overflow-hidden rounded-[28px] border-2 bg-ink-800 transition-opacity
-              ${done ? 'border-ok/40 opacity-70' : running ? 'border-cat' : 'border-line'}`}>
+            className={`relative overflow-hidden rounded-[28px] border-2 bg-ink-800 transition-opacity
+              ${done ? 'border-ok/40 opacity-70' : running ? 'border-cat' : fresh.has(task.id) ? 'border-ok animate-risein' : 'border-line'}`}>
+            {fresh.has(task.id) && (
+              <span className={`absolute right-4 top-3 z-10 rounded-full bg-ok px-3 py-1 text-sm font-extrabold text-ink-900 ${lang === 'hi' ? 'lang-hi leading-none' : ''}`}>
+                {lang === 'hi' ? 'नया' : 'New'}
+              </span>
+            )}
             <div className="flex gap-4 p-4">
               {/* picture of the job, with its number */}
               <div className="relative shrink-0">

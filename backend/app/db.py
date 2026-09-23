@@ -35,6 +35,8 @@ TASKS_SEED: list[dict] = _read_json("tasks.json")
 TRAINING: dict = _read_json("training.json")
 GUIDES: list[dict] = _read_json("guides.json")
 GUIDES_BY_ID = {g["id"]: g for g in GUIDES}
+# What each machine is, its parts, its own safety rules and a tutorial video.
+MACHINE_ABOUT: dict = _read_json("machine_about.json")
 TASK_HISTORY: list[dict] = _read_json("task_history.json")
 TELEMETRY_HISTORY: list[dict] = _read_csv("telemetry_history.csv")
 
@@ -42,7 +44,30 @@ OPERATORS_BY_ID = {o["id"]: o for o in OPERATORS}
 MACHINES_BY_ID = {m["id"]: m for m in MACHINES}
 
 # --------------------------------------------------------------- mutable state
-TASKS: list[dict] = [dict(t) for t in TASKS_SEED]
+# Tasks change during a shift - a manager assigns, an operator starts and
+# finishes - so they are kept on disk and survive a server restart. The seed
+# file is only the starting point.
+TASKS_FILE = settings.seed_dir.parent.parent / "data" / "tasks.json"
+
+
+def _load_tasks() -> list[dict]:
+    if TASKS_FILE.exists():
+        try:
+            return json.loads(TASKS_FILE.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001 - a corrupt file falls back to the seed
+            pass
+    return [dict(t) for t in TASKS_SEED]
+
+
+TASKS: list[dict] = _load_tasks()
+
+
+def save_tasks() -> None:
+    with _LOCK:
+        TASKS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        tmp = TASKS_FILE.with_suffix(".tmp")
+        tmp.write_text(json.dumps(TASKS, ensure_ascii=False, indent=1), encoding="utf-8")
+        tmp.replace(TASKS_FILE)
 INCIDENTS: list[dict] = []
 BOOKINGS: list[dict] = []
 CONVERSATIONS: dict[str, list[dict]] = {}
@@ -113,6 +138,38 @@ def update_task(task_id: str, **fields) -> dict | None:
             return None
         row.update(fields)
         row["updated_at"] = datetime.now().isoformat(timespec="seconds")
+        save_tasks()
+        return row
+
+
+def resequence(operator_id: str) -> None:
+    """Keep an operator's tasks numbered in order of their start time."""
+    rows = sorted((t for t in TASKS if t["operator_id"] == operator_id),
+                  key=lambda t: (t.get("planned_start", "99:99"), t.get("created_at", "")))
+    for index, row in enumerate(rows, start=1):
+        row["sequence"] = index
+
+
+def add_task(record: dict) -> dict:
+    with _LOCK:
+        numbers = [int(t["id"].split("-")[-1]) for t in TASKS if t["id"].split("-")[-1].isdigit()]
+        record["id"] = f"T-{max(numbers, default=0) + 1:02d}"
+        record.setdefault("status", "pending")
+        record["created_at"] = datetime.now().isoformat(timespec="seconds")
+        TASKS.append(record)
+        resequence(record["operator_id"])
+        save_tasks()
+        return record
+
+
+def remove_task(task_id: str) -> dict | None:
+    with _LOCK:
+        row = task(task_id)
+        if row is None:
+            return None
+        TASKS.remove(row)
+        resequence(row["operator_id"])
+        save_tasks()
         return row
 
 
@@ -198,9 +255,9 @@ def task_history(task_type: str | None = None, machine_id: str | None = None) ->
 
 def reset_runtime_state() -> None:
     """Used by the demo reset button so a second run starts clean."""
-    global TASKS
     with _LOCK:
-        TASKS = [dict(t) for t in TASKS_SEED]
+        TASKS[:] = [dict(t) for t in TASKS_SEED]
+        TASKS_FILE.unlink(missing_ok=True)
         INCIDENTS.clear()
         BOOKINGS.clear()
         CONVERSATIONS.clear()

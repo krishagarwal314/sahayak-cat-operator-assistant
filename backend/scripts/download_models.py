@@ -30,6 +30,7 @@ SIZES = {
     "vasista22/whisper-hindi-small": "0.9 GB",
     "vasista22/whisper-hindi-medium": "3.1 GB",
     "facebook/mms-tts-hin": "0.15 GB",
+    "facebook/mms-tts-eng": "0.15 GB",
     "ai4bharat/IndicF5": "1.4 GB",
     "facebook/nllb-200-distilled-600M": "2.5 GB",
     "facebook/nllb-200-distilled-1.3B": "5.5 GB",
@@ -53,6 +54,7 @@ GATED = {
 ROLE_NOTES = {
     "stt": "speech to text (Hindi)",
     "tts": "text to speech (Hindi)",
+    "tts_en": "text to speech (English)",
     "translate": "English -> Hindi for manager task text",
     "embedder": "semantic intent matching (router stage L2)",
     "intent_base": "base checkpoint the intent classifier is fine-tuned from",

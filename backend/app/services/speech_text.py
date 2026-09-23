@@ -240,3 +240,116 @@ def phrases(text: str) -> list[tuple[str, str]]:
             if clean:
                 out.append((clean, "long" if index == len(pieces) - 1 else "short"))
     return out
+
+
+# =============================================================================
+# English
+# =============================================================================
+# facebook/mms-tts-eng has an even smaller vocabulary than the Hindi model: 38
+# symbols - lowercase a to z, the digits 0 to 6 (no 7, 8 or 9), space,
+# apostrophe and two dashes. No punctuation, no capitals beyond what the
+# tokenizer lowercases. Same treatment as Hindi: numbers and symbols become
+# words, and pauses come from real silence between phrases.
+MMS_ENG_VOCAB = set(" '-0123456_abcdefghijklmnopqrstuvwxyz–")
+
+_EN_ONES = [
+    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+    "seventeen", "eighteen", "nineteen",
+]
+_EN_TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+
+
+def int_to_english(n: int) -> str:
+    if n < 0:
+        return "minus " + int_to_english(-n)
+    if n < 20:
+        return _EN_ONES[n]
+    if n < 100:
+        tens, ones = divmod(n, 10)
+        return _EN_TENS[tens] + (f" {_EN_ONES[ones]}" if ones else "")
+    if n < 1000:
+        hundreds, rest = divmod(n, 100)
+        return f"{_EN_ONES[hundreds]} hundred" + (f" and {int_to_english(rest)}" if rest else "")
+    for size, word in ((1_000_000_000, "billion"), (1_000_000, "million"), (1000, "thousand")):
+        if n >= size:
+            head, rest = divmod(n, size)
+            tail = "" if not rest else (f" and {int_to_english(rest)}" if rest < 100 else f" {int_to_english(rest)}")
+            return f"{int_to_english(head)} {word}{tail}"
+    return str(n)
+
+
+def number_to_english(token: str) -> str:
+    token = token.replace(",", "")
+    if ":" in token:
+        h, _, m = token.partition(":")
+        if h.isdigit() and m.isdigit():
+            hours, minutes = int(h), int(m)
+            if minutes == 0:
+                return f"{int_to_english(hours)} o'clock"
+            return f"{int_to_english(hours)} {'oh ' + _EN_ONES[minutes] if minutes < 10 else int_to_english(minutes)}"
+    if "." in token:
+        whole, _, frac = token.partition(".")
+        frac = frac.rstrip("0")
+        head = int_to_english(int(whole or 0))
+        return head if not frac else f"{head} point " + " ".join(_EN_ONES[int(d)] for d in frac[:2])
+    return int_to_english(int(token))
+
+
+_EN_SYMBOLS = {
+    "°C": " degrees", "°": " degrees", "%": " percent", "₹": " rupees ", "&": " and ",
+    "+": " plus ", "/": " ", "×": " times ", ": ": ", ",
+}
+_EN_UNITS = {
+    "psi": "p s i", "kpa": "kilopascal", "kg": "kilograms", "km": "kilometres",
+    "rpm": "r p m", "def": "d e f", "gc": "g c", "cat": "cat", "min": "minutes",
+    "hrs": "hours", "hr": "hour", "l": "litres", "v": "volts",
+}
+
+
+def to_speech_en(text: str, *, slow: bool = False) -> str:
+    """Rewrite an English reply so MMS-TTS English can read all of it."""
+    if not text:
+        return ""
+    out = text
+    for symbol, spoken in _EN_SYMBOLS.items():
+        out = out.replace(symbol, spoken)
+    out = _DASH.sub(", ", out)
+
+    def speak_word(match: re.Match) -> str:
+        word = match.group(0)
+        low = word.lower()
+        if low in _EN_UNITS:
+            return _EN_UNITS[low]
+        id_match = re.fullmatch(r"([a-z]+)(\d+)", low)
+        if id_match:  # EXC001 -> "e x c one"
+            letters, digits = id_match.groups()
+            return " ".join(letters) + " " + number_to_english(digits)
+        if word.isupper() and len(word) <= 4:   # acronyms are spelled
+            return " ".join(low)
+        return low
+
+    out = re.sub(r"[A-Za-z]+\d*", speak_word, out)
+
+    def speak_number(match: re.Match) -> str:
+        token = match.group(0)
+        if slow and "." in token and ":" not in token:
+            try:
+                value = float(token.replace(",", ""))
+                token = str(round(value)) if abs(value) >= 10 else f"{value:.1f}"
+            except ValueError:
+                pass
+        return " " + number_to_english(token) + " "
+
+    out = _NUM.sub(speak_number, out)
+    out = re.sub(r"\d", lambda m: " " + _EN_ONES[int(m.group(0))] + " ", out)
+    # Keep phrase punctuation for pausing; drop anything else the model lacks.
+    out = "".join(ch if (ch.lower() in MMS_ENG_VOCAB or ch in ".,;?!") else " " for ch in out)
+    out = _WS.sub(" ", out).strip()
+    if out and out[-1] not in ".?!":
+        out += "."
+    return out.replace(" ,", ",").replace(" .", ".")
+
+
+def unspeakable_en(text: str) -> set[str]:
+    return {ch for ch in text.lower() if ch not in MMS_ENG_VOCAB and ch not in ".,;?!"}

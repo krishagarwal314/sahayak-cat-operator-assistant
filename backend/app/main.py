@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import REPO_DIR, settings
-from .routers import assistant, auth, face_auth, guides, machines, safety, system, tasks, training, voice
+from .routers import assistant, auth, face_auth, guides, machines, manager, safety, system, tasks, training, voice
 
 logging.basicConfig(
     level=logging.INFO,
@@ -62,7 +62,7 @@ async def key_error_handler(_: Request, exc: KeyError) -> JSONResponse:
     return JSONResponse(status_code=404, content={"detail": f"Not found: {exc}"})
 
 
-for module in (auth, face_auth, tasks, machines, assistant, voice, guides, safety, training, system):
+for module in (auth, face_auth, tasks, machines, assistant, voice, guides, manager, safety, training, system):
     app.include_router(module.router)
 
 
@@ -135,6 +135,7 @@ def startup() -> None:
             ("embedder", intent_embedder.warm),
             ("stt", stt.available),
             ("tts", tts.available),
+            ("tts_en", tts.available_en),
             ("translate", translate.available),
             ("face", face.available),
         ):

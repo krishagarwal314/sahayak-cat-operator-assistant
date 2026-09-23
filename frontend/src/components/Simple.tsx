@@ -51,13 +51,25 @@ export function PageHeader({ icon, title, onReplay, speaking }: {
   icon: React.ReactNode; title: string; onReplay: () => void; speaking: boolean
 }) {
   const { lang } = useLang()
+  const { blocked } = useVoiceOut()
   return (
-    <div className="flex items-center gap-4">
-      <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-cat/15 text-cat">{icon}</div>
-      <h1 className={`min-w-0 flex-1 text-[26px] font-extrabold leading-tight text-white ${lang === 'hi' ? 'lang-hi' : ''}`}>
-        {title}
-      </h1>
-      <SpeakButton onClick={onReplay} active={speaking} />
+    <div className="space-y-3">
+      <div className="flex items-center gap-4">
+        <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-cat/15 text-cat">{icon}</div>
+        <h1 className={`min-w-0 flex-1 text-[26px] font-extrabold leading-tight text-white ${lang === 'hi' ? 'lang-hi' : ''}`}>
+          {title}
+        </h1>
+        <div className="relative">
+          {blocked && <span className="absolute inset-0 rounded-2xl bg-cat/50 animate-pulsering" />}
+          <SpeakButton onClick={onReplay} active={speaking || blocked} />
+        </div>
+      </div>
+      {blocked && (
+        <button onClick={onReplay}
+          className={`flex w-full items-center justify-center gap-2 rounded-2xl bg-cat py-3 text-lg font-extrabold text-ink-900 animate-risein ${lang === 'hi' ? 'lang-hi' : ''}`}>
+          <Pictogram name="speaker" className="h-7 w-7" />{lang === 'hi' ? 'आवाज़ के लिए दबाइए' : 'Tap to hear'}
+        </button>
+      )}
     </div>
   )
 }
@@ -281,7 +293,7 @@ export function SimpleShell({ children }: { children: React.ReactNode }) {
     // "लोडर चुनो" - switch the machine and take the operator to it.
     const target = result.switched_machine
       ?? (result.route.intent === 'SWITCH_MACHINE' ? result.reply.data?.machine_id : null)
-    if (target) void selectMachine(target).then(() => navigate('/machine'))
+    if (target) void selectMachine(target).then(() => navigate('/machine/about'))
   }, [lang, navigate, playInline, selectMachine])
 
   const askIntent = useCallback(async (intent: string, label: string) => {

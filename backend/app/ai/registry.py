@@ -88,6 +88,7 @@ def status() -> dict:
         "configured": {
             "stt": settings.stt_model,
             "tts": settings.tts_model,
+            "tts_en": settings.tts_model_en,
             "translate": settings.translate_model,
             "embedder": settings.embedder_model,
             "intent_base": settings.intent_base_model,

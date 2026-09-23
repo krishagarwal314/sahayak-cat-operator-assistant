@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useLang } from '../lib/i18n'
 import { useSession } from '../lib/session'
@@ -8,7 +8,7 @@ import { usePageIntro } from '../lib/usePageIntro'
 import type { MachineCard, MachineDetail, Reading } from '../lib/types'
 import { MachineIcon } from '../components/MachineIcon'
 import { INTENT_ICON, Pictogram, SENSOR_ICON } from '../components/Pictogram'
-import { PageHeader, toneOf, useAnswer } from '../components/Simple'
+import { PageHeader, SpeakButton, toneOf, useAnswer } from '../components/Simple'
 
 /** Tapping a tile asks about that sensor, so the answer is spoken, not just shown. */
 const SENSOR_INTENT: Record<string, string> = {
@@ -39,20 +39,25 @@ function shortValue(reading: Reading, lang: 'hi' | 'en'): string {
 }
 
 // ================================================================ picker
-function Picker({ onPicked }: { onPicked: () => void }) {
+function Picker() {
   const { lang } = useLang()
+  const navigate = useNavigate()
   const { selectMachine } = useSession()
-  const { speak, speakingId } = useVoiceOut()
+  const { speak, stop, speakingId } = useVoiceOut()
   const { replay } = usePageIntro('machines', speak)
   const [machines, setMachines] = useState<MachineCard[]>([])
 
   useEffect(() => { api.machines().then(setMachines).catch(() => undefined) }, [])
 
   async function pick(machine: MachineCard) {
+    stop()
     await selectMachine(machine.id)
-    void speak(lang === 'hi' ? `${machine.name_hi} चुनी गई।` : `${machine.name_en} selected.`, lang, 'picked', true)
-    onPicked()
+    // First stop after choosing: what this machine is and how to be safe on it.
+    navigate('/machine/about')
   }
+
+  const identify = (machine: MachineCard) =>
+    (lang === 'hi' ? machine.identify_hi : machine.identify_en) ?? (lang === 'hi' ? machine.name_hi : machine.name_en)
 
   return (
     <div className="space-y-5">
@@ -69,32 +74,41 @@ function Picker({ onPicked }: { onPicked: () => void }) {
 
       {machines.map((machine) => {
         const tone = toneOf(machine.status)
+        const id = `which-${machine.id}`
         return (
-          <button key={machine.id} onClick={() => void pick(machine)}
-            className={`relative flex w-full items-center gap-5 rounded-[28px] border-2 bg-ink-800 p-5 text-left transition-all active:scale-[0.98]
-              ${machine.assigned ? 'border-cat' : 'border-line'}`}>
-            <div className="grid h-28 w-32 shrink-0 place-items-center rounded-3xl bg-cat/10 text-cat">
-              <MachineIcon family={machine.family} className="h-20 w-24" />
-            </div>
-            <div className="min-w-0 flex-1">
-              {machine.assigned && (
-                <span className={`mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-cat px-3 py-1 text-sm font-extrabold text-ink-900 ${lang === 'hi' ? 'lang-hi leading-none' : ''}`}>
-                  <Pictogram name="star" className="h-4 w-4" />{lang === 'hi' ? 'आज की मशीन' : "Today's machine"}
-                </span>
-              )}
-              <div className={`text-[26px] font-extrabold leading-tight text-white ${lang === 'hi' ? 'lang-hi' : ''}`}>
-                {lang === 'hi' ? machine.short_hi : machine.family[0].toUpperCase() + machine.family.slice(1)}
+          <div key={machine.id}
+            className={`flex items-stretch overflow-hidden rounded-[28px] border-2 bg-ink-800 ${machine.assigned ? 'border-cat' : 'border-line'}`}>
+            <button onClick={() => void pick(machine)}
+              className="flex min-w-0 flex-1 items-center gap-4 p-4 text-left transition-colors active:bg-ink-700">
+              <div className="grid h-24 w-28 shrink-0 place-items-center rounded-3xl bg-cat/10 text-cat">
+                <MachineIcon family={machine.family} className="h-16 w-20" />
               </div>
-              <div className="mt-1 text-lg font-semibold text-mute">{machine.model}</div>
-              <div className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 ${tone.bg} ${tone.text}`}>
-                <Pictogram name={tone.icon} className="h-5 w-5" />
-                <span className={`text-sm font-bold ${lang === 'hi' ? 'lang-hi' : ''}`}>
-                  {machine.status === 'ok' ? (lang === 'hi' ? 'ठीक है' : 'Good')
-                    : machine.status === 'crit' ? (lang === 'hi' ? 'खतरा' : 'Danger') : (lang === 'hi' ? 'ध्यान दें' : 'Check')}
-                </span>
+              <div className="min-w-0 flex-1">
+                {machine.assigned && (
+                  <span className={`mb-1.5 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-cat px-2.5 py-1 text-xs font-extrabold text-ink-900 ${lang === 'hi' ? 'lang-hi leading-none' : ''}`}>
+                    <Pictogram name="star" className="h-3.5 w-3.5 shrink-0" />{lang === 'hi' ? 'आज की मशीन' : "Today's machine"}
+                  </span>
+                )}
+                <div className={`text-[24px] font-extrabold leading-tight text-white ${lang === 'hi' ? 'lang-hi' : ''}`}>
+                  {lang === 'hi' ? machine.short_hi : machine.family[0].toUpperCase() + machine.family.slice(1)}
+                </div>
+                <div className="mt-0.5 text-base font-semibold text-mute">{machine.model}</div>
+                <div className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 ${tone.bg} ${tone.text}`}>
+                  <Pictogram name={tone.icon} className="h-5 w-5" />
+                  <span className={`text-sm font-bold ${lang === 'hi' ? 'lang-hi' : ''}`}>
+                    {machine.status === 'ok' ? (lang === 'hi' ? 'ठीक है' : 'Good')
+                      : machine.status === 'crit' ? (lang === 'hi' ? 'खतरा' : 'Danger') : (lang === 'hi' ? 'ध्यान दें' : 'Check')}
+                  </span>
+                </div>
               </div>
+            </button>
+            {/* "Which machine is this?" - tells the operator before they choose */}
+            <div className="flex items-center border-l border-line-soft px-3">
+              <SpeakButton size="lg" label="which machine is this"
+                active={speakingId === id}
+                onClick={() => (speakingId === id ? stop() : void speak(identify(machine), lang, id, true))} />
             </div>
-          </button>
+          </div>
         )
       })}
     </div>
@@ -104,6 +118,7 @@ function Picker({ onPicked }: { onPicked: () => void }) {
 // ================================================================ machine view
 function MachineView({ onChange }: { onChange: () => void }) {
   const { lang } = useLang()
+  const navigate = useNavigate()
   const { machineId } = useSession()
   const { speak, speakingId } = useVoiceOut()
   const { askIntent, busy } = useAnswer()
@@ -208,10 +223,16 @@ function MachineView({ onChange }: { onChange: () => void }) {
         </div>
       )}
 
-      <button onClick={onChange}
-        className="flex h-16 w-full items-center justify-center gap-3 rounded-2xl border-2 border-line text-lg font-bold text-slate-200">
-        <Pictogram name="switch" className="h-7 w-7" />{lang === 'hi' ? 'मशीन बदलें' : 'Change machine'}
-      </button>
+      <div className="grid grid-cols-2 gap-3">
+        <button onClick={() => navigate('/machine/about')}
+          className="flex h-20 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-cat/50 bg-cat/10 text-base font-bold text-cat">
+          <Pictogram name="book" className="h-8 w-8" />{lang === 'hi' ? 'मशीन की जानकारी' : 'About this machine'}
+        </button>
+        <button onClick={onChange}
+          className="flex h-20 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-line text-base font-bold text-slate-200">
+          <Pictogram name="switch" className="h-8 w-8" />{lang === 'hi' ? 'मशीन बदलें' : 'Change machine'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -221,6 +242,6 @@ export default function MachineHome() {
   const [params, setParams] = useSearchParams()
   const picking = !machineId || params.get('pick') === '1'
   return picking
-    ? <Picker onPicked={() => setParams({})} />
+    ? <Picker />
     : <MachineView onChange={() => setParams({ pick: '1' })} />
 }

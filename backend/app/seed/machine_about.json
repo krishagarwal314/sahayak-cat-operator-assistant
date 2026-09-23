@@ -1,0 +1,71 @@
+{
+  "EXC001": {
+    "identify_hi": "यह कैट तीन सौ बीस एक्सकेवेटर है। पीली मशीन, लंबी बाँह और आगे बकेट। यह पटरी पर चलती है और खुदाई करती है।",
+    "identify_en": "This is the CAT 320 excavator. A yellow machine with a long arm and a bucket at the front. It runs on tracks and digs.",
+    "summary_hi": "एक्सकेवेटर खुदाई की मशीन है। इससे खाई खोदते हैं, मिट्टी उठाते हैं और ट्रक भरते हैं। इसका ऊपर का हिस्सा पूरा घूम सकता है।",
+    "summary_en": "The excavator is a digging machine. It digs trenches, lifts soil and loads trucks. Its whole upper body can turn round.",
+    "parts": [
+      {"icon": "bucket_down", "name_hi": "बकेट", "name_en": "Bucket", "what_hi": "मिट्टी खोदता और उठाता है।", "what_en": "Digs and carries the soil."},
+      {"icon": "dig", "name_hi": "बूम और आर्म", "name_en": "Boom and arm", "what_hi": "बकेट को ऊपर नीचे और आगे पीछे ले जाते हैं।", "what_en": "Move the bucket up, down, in and out."},
+      {"icon": "swing", "name_hi": "घूमने वाला हिस्सा", "name_en": "Swing", "what_hi": "केबिन और बाँह पूरा गोल घूमते हैं।", "what_en": "The cab and arm turn all the way round."},
+      {"icon": "track", "name_hi": "पटरी", "name_en": "Tracks", "what_hi": "मशीन को कीचड़ और पत्थर पर चलाती है।", "what_en": "Carry the machine over mud and rock."}
+    ],
+    "safety": [
+      {"icon": "swing", "hi": "घुमाने से पहले पीछे देखिए। मशीन का पिछला हिस्सा भी घूमता है और किसी को टक्कर मार सकता है।", "en": "Look behind before you swing. The back of the machine swings too and can hit someone."},
+      {"icon": "cable", "hi": "ज़मीन के नीचे केबल या पाइप हो सकते हैं। पीली लाइन के पास बहुत धीरे खोदिए।", "en": "There may be cables or pipes underground. Dig very slowly near the yellow line."},
+      {"icon": "proximity", "hi": "बकेट के नीचे कभी किसी को खड़ा मत होने दीजिए।", "en": "Never let anyone stand under the bucket."},
+      {"icon": "slope", "hi": "खाई के किनारे के बहुत पास मत जाइए, किनारा टूट सकता है।", "en": "Keep back from the trench edge. It can collapse."},
+      {"icon": "seatbelt", "hi": "हमेशा सीट बेल्ट लगाइए।", "en": "Always wear your seatbelt."}
+    ],
+    "guides": ["pre_start", "start_up", "excavator_trench", "shutdown"],
+    "video": {"youtube_id": "xvCbhHcd2-c", "title": "Cat® Next Generation Excavators: Walkaround 320 Size Class", "channel": "Cat® Products",
+              "about_hi": "कैट की अपनी वीडियो: तीन सौ बीस एक्सकेवेटर का पूरा चक्कर, सुरक्षा और रखरखाव।",
+              "about_en": "Caterpillar's own walkaround of the 320: safety and maintenance."}
+  },
+  "LDR001": {
+    "identify_hi": "यह कैट नौ सौ पचास लोडर है। बड़े टायर वाली मशीन, आगे चौड़ी बकेट। यह माल उठाकर ट्रक में भरती है।",
+    "identify_en": "This is the CAT 950 loader. A machine on big tyres with a wide bucket at the front. It picks up material and fills trucks.",
+    "summary_hi": "लोडर माल उठाने और ढोने की मशीन है। इससे रेत, पत्थर और मिट्टी उठाकर ट्रक या क्रशर में डालते हैं। यह बीच से मुड़ती है।",
+    "summary_en": "The loader lifts and carries material. It picks up sand, stone and soil and puts it into trucks or the crusher. It bends in the middle to steer.",
+    "parts": [
+      {"icon": "bucket_flat", "name_hi": "बकेट", "name_en": "Bucket", "what_hi": "एक बार में कई टन माल उठाती है।", "what_en": "Picks up several tonnes at a time."},
+      {"icon": "blade_up", "name_hi": "उठाने वाली बाँहें", "name_en": "Lift arms", "what_hi": "बकेट को ऊपर उठाती हैं।", "what_en": "Raise the bucket up high."},
+      {"icon": "tire", "name_hi": "बड़े टायर", "name_en": "Big tyres", "what_hi": "तेज़ चलने के लिए। हवा का दबाव ठीक रखिए।", "what_en": "For moving fast. Keep the air pressure right."},
+      {"icon": "payload", "name_hi": "वज़न की स्क्रीन", "name_en": "Payload screen", "what_hi": "बकेट में कितना वज़न है, बताती है।", "what_en": "Shows how much is in the bucket."}
+    ],
+    "safety": [
+      {"icon": "reverse", "hi": "पीछे जाते समय हमेशा मुड़कर देखिए। लोडर के पीछे बहुत कम दिखता है।", "en": "Always turn and look when reversing. You can see very little behind a loader."},
+      {"icon": "bucket_down", "hi": "चलते समय बकेट नीचे रखिए, ऊपर उठी बकेट से मशीन पलट सकती है।", "en": "Carry the bucket low. A raised bucket can tip the machine over."},
+      {"icon": "payload", "hi": "ट्रक कभी ज़्यादा मत भरिए। हर बार वज़न देखिए।", "en": "Never overload a truck. Check the weight every time."},
+      {"icon": "truck", "hi": "ट्रक के केबिन के ऊपर से बकेट कभी मत ले जाइए।", "en": "Never pass the bucket over a truck cab."},
+      {"icon": "seatbelt", "hi": "हमेशा सीट बेल्ट लगाइए।", "en": "Always wear your seatbelt."}
+    ],
+    "guides": ["pre_start", "start_up", "loader_truck", "shutdown"],
+    "video": {"youtube_id": "TqalDeDczdE", "title": "How to Operate Your Cat® GC Wheel Loader", "channel": "Cat® Products",
+              "about_hi": "कैट की अपनी वीडियो: जी सी लोडर कैसे चलाएँ, और काम से पहले की जाँच।",
+              "about_en": "Caterpillar's own guide to operating the GC loader, with the pre-shift check."}
+  },
+  "DZR001": {
+    "identify_hi": "यह कैट डी छह डोज़र है। आगे बड़ा सीधा ब्लेड, नीचे पटरी। यह मिट्टी धकेलती है और ज़मीन समतल करती है।",
+    "identify_en": "This is the CAT D6 dozer. A big flat blade at the front and tracks underneath. It pushes soil and levels the ground.",
+    "summary_hi": "डोज़र धकेलने की मशीन है। इससे मिट्टी और पत्थर धकेलते हैं, सड़क बनाते हैं और ज़मीन समतल करते हैं। यह बहुत ताकतवर है।",
+    "summary_en": "The dozer is a pushing machine. It pushes soil and rock, builds roads and levels ground. It is very powerful.",
+    "parts": [
+      {"icon": "blade", "name_hi": "ब्लेड", "name_en": "Blade", "what_hi": "आगे की बड़ी प्लेट जो मिट्टी धकेलती है।", "what_en": "The big front plate that pushes soil."},
+      {"icon": "blade_up", "name_hi": "ब्लेड उठाना", "name_en": "Blade lift", "what_hi": "ब्लेड को ऊपर नीचे और तिरछा करता है।", "what_en": "Raises, lowers and tilts the blade."},
+      {"icon": "track", "name_hi": "पटरी", "name_en": "Tracks", "what_hi": "ढलान और खराब ज़मीन पर पकड़ देती है।", "what_en": "Grip on slopes and rough ground."},
+      {"icon": "radio", "name_hi": "रेडियो", "name_en": "Radio", "what_hi": "दूसरी मशीनों से बात करने के लिए।", "what_en": "To talk to other machines."}
+    ],
+    "safety": [
+      {"icon": "slope", "hi": "ढलान पर हमेशा सीधे ऊपर या नीचे चलिए। तिरछे चलने से मशीन पलट सकती है।", "en": "On slopes, go straight up or down. Going across can roll the machine."},
+      {"icon": "radio", "hi": "पीछे जाने से पहले रेडियो पर बताइए।", "en": "Call on the radio before reversing."},
+      {"icon": "blade", "hi": "मशीन छोड़ने से पहले ब्लेड ज़मीन पर रखिए।", "en": "Put the blade on the ground before leaving the machine."},
+      {"icon": "proximity", "hi": "पानी के टैंकर और लोगों से दूरी बनाए रखिए।", "en": "Keep well away from water tankers and people."},
+      {"icon": "seatbelt", "hi": "हमेशा सीट बेल्ट लगाइए।", "en": "Always wear your seatbelt."}
+    ],
+    "guides": ["pre_start", "start_up", "dozer_push", "shutdown"],
+    "video": {"youtube_id": "3eGy3PNdqC4", "title": "How to Operate Your Cat® D6/D7 Dozer", "channel": "Cat® Products",
+              "about_hi": "कैट की अपनी वीडियो: डी छह डोज़र कैसे चलाएँ।",
+              "about_en": "Caterpillar's own guide to operating the D6 dozer."}
+  }
+}

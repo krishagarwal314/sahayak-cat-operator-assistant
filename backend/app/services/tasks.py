@@ -32,8 +32,15 @@ _FIELDS = ("title", "instructions", "safety_note")
 _CURATED_ONLY = ("location",)
 
 
-def _translate_field(task_id: str, field: str, english: str) -> tuple[str, str]:
-    """Returns (hindi_text, source) where source is model | curated | english."""
+def _translate_field(task_id: str, field: str, english: str,
+                     approved: dict | None = None) -> tuple[str, str]:
+    """Returns (hindi_text, source): manager | model | curated | english.
+
+    Hindi the manager checked before assigning always wins. It is the only
+    version a human has confirmed says the right thing.
+    """
+    if approved and approved.get(field):
+        return approved[field], "manager"
     curated = _FALLBACK_HI.get(task_id, {}).get(field)
     result = translate.translate(english, source="en", target="hi")
     if result and result.text:
@@ -51,10 +58,11 @@ def localize(task: dict) -> dict:
         english = task.get(f"{field}_en", "")
         if not english:
             continue
-        hindi[field], source = _translate_field(task["id"], field, english)
+        hindi[field], source = _translate_field(task["id"], field, english, task.get("hi_approved"))
     for field in _CURATED_ONLY:
+        approved = (task.get("hi_approved") or {}).get(field)
         curated = _FALLBACK_HI.get(task["id"], {}).get(field)
-        hindi[field] = curated or task.get(field, "")
+        hindi[field] = approved or curated or task.get(field, "")
     return {**task, "hi": hindi, "translation_source": source}
 
 
@@ -111,7 +119,7 @@ def briefing(operator_id: str) -> dict:
         f"आज आपके लिए {len(tasks)} काम निर्धारित हैं और आप {machine_names_hi} पर काम करेंगे।",
     ]
     lines_en = [
-        f"Hello {operator['name_en']}, your shift is {operator['shift']}.",
+        f"Hello {operator['name_en']}, you are on {operator.get('shift_en_spoken', operator['shift'])}.",
         f"You have {len(tasks)} tasks today and you will be working on the {machine_names_en}.",
     ]
     for index, task in enumerate(tasks, start=1):
@@ -184,6 +192,8 @@ def recommended_machines(operator_id: str) -> list[dict]:
                 "attention_count": attention,
                 "quick_questions_hi": machine["quick_questions_hi"],
                 "quick_questions_en": machine["quick_questions_en"],
+                "identify_hi": db.MACHINE_ABOUT.get(machine["id"], {}).get("identify_hi", machine["name_hi"]),
+                "identify_en": db.MACHINE_ABOUT.get(machine["id"], {}).get("identify_en", machine["name_en"]),
             }
         )
     return out

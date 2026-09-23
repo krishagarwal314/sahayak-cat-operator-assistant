@@ -43,7 +43,7 @@ export default function FaceLogin() {
   const [enrollee, setEnrollee] = useState<FacePerson | null>(null)
   const [samples, setSamples] = useState(0)
 
-  useEffect(() => { if (operator) navigate('/work', { replace: true }) }, [operator, navigate])
+  useEffect(() => { if (operator) navigate(operator.role === 'manager' ? '/manager' : '/work', { replace: true }) }, [operator, navigate])
   useEffect(() => { api.faceStatus().then(setStatus).catch(() => setStatus(null)) }, [])
   useEffect(() => () => streamRef.current?.getTracks().forEach((t) => t.stop()), [])
 
@@ -63,8 +63,14 @@ export default function FaceLogin() {
     setWelcome({ name: lang === 'hi' ? op.name_hi : op.name_en, initials: op.avatar_initials })
     setMode('welcome')
     say(greeting)
-    window.setTimeout(() => { adopt(token, op); navigate('/work', { replace: true }) }, 2200)
-  }, [adopt, lang, navigate, say])
+    window.setTimeout(() => {
+      adopt(token, op)
+      // Everyone gets the interface in their own language: operators Hindi, the
+      // manager (profile language English) English.
+      if (op.language === 'hi' || op.language === 'en') setLang(op.language)
+      navigate(op.role === 'manager' ? '/manager' : '/work', { replace: true })
+    }, 2200)
+  }, [adopt, lang, navigate, say, setLang])
 
   // ---------------------------------------------------------------- camera
   const startCamera = useCallback(async (): Promise<boolean> => {

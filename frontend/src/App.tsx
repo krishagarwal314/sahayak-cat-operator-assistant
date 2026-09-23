@@ -8,6 +8,7 @@ import { Loading } from './components/ui'
 import FaceLogin from './pages/FaceLogin'
 import Work from './pages/Work'
 import MachineHome from './pages/MachineHome'
+import MachineAbout from './pages/MachineAbout'
 import Learn from './pages/Learn'
 import GuidePlayer from './pages/GuidePlayer'
 import SafetySimple from './pages/SafetySimple'
@@ -16,6 +17,7 @@ import MachineSelect from './pages/MachineSelect'
 import Cockpit from './pages/Cockpit'
 import Training from './pages/Training'
 import Insights from './pages/Insights'
+import Manager from './pages/Manager'
 
 function RequireAuth() {
   const { operator, ready } = useSession()
@@ -24,8 +26,27 @@ function RequireAuth() {
   return <Outlet />
 }
 
+/** Where someone lands after login depends on who they are. */
+export function homeFor(role?: string) {
+  return role === 'manager' ? '/manager' : '/work'
+}
+
+function Home() {
+  const { operator, ready } = useSession()
+  if (!ready) return <Loading />
+  return <Navigate to={operator ? homeFor(operator.role) : '/login'} replace />
+}
+
+function RequireManager() {
+  const { operator } = useSession()
+  if (operator?.role !== 'manager') return <Navigate to="/work" replace />
+  return <Outlet />
+}
+
 /** The operator's interface: pictures, voice, one action per screen. */
 function Simple() {
+  const { operator } = useSession()
+  if (operator?.role === 'manager') return <Navigate to="/manager" replace />
   return <SimpleShell><Outlet /></SimpleShell>
 }
 
@@ -53,8 +74,12 @@ export default function App() {
         <Route element={<Simple />}>
           <Route path="/work" element={<Work />} />
           <Route path="/machine" element={<MachineHome />} />
+          <Route path="/machine/about" element={<MachineAbout />} />
           <Route path="/learn" element={<Learn />} />
           <Route path="/safety" element={<SafetySimple />} />
+        </Route>
+        <Route element={<RequireManager />}>
+          <Route path="/manager" element={<Manager />} />
         </Route>
         <Route path="/guide/:id" element={<GuidePlayer />} />
         <Route path="/pro" element={<Pro />}>
@@ -66,7 +91,7 @@ export default function App() {
           <Route path="insights" element={<Insights />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/work" replace />} />
+      <Route path="*" element={<Home />} />
     </Routes>
   )
 }

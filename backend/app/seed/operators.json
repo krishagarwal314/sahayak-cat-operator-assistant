@@ -21,7 +21,8 @@
       "loader": 0.74,
       "dozer": 0.41
     },
-    "shift_hi": "दिन की पाली (सुबह 7 से शाम 4)"
+    "shift_hi": "दिन की पाली (सुबह 7 से शाम 4)",
+    "shift_en_spoken": "the day shift, from 7 in the morning to 4 in the afternoon"
   },
   {
     "id": "OP1002",
@@ -45,7 +46,8 @@
       "loader": 0.81,
       "dozer": 0.69
     },
-    "shift_hi": "दिन की पाली (सुबह 7 से शाम 4)"
+    "shift_hi": "दिन की पाली (सुबह 7 से शाम 4)",
+    "shift_en_spoken": "the day shift, from 7 in the morning to 4 in the afternoon"
   },
   {
     "id": "MG2001",
@@ -66,6 +68,7 @@
     "supervisor": null,
     "avatar_initials": "AS",
     "skill_scores": {},
-    "shift_hi": "दिन की पाली (सुबह 7 से शाम 5)"
+    "shift_hi": "दिन की पाली (सुबह 7 से शाम 5)",
+    "shift_en_spoken": "the day shift, from 7 in the morning to 5 in the evening"
   }
 ]

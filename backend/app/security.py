@@ -65,3 +65,10 @@ def current_operator(
 def public_operator(operator: dict) -> dict:
     """Operator record without the password field."""
     return {k: v for k, v in operator.items() if k != "password"}
+
+
+def current_manager(operator: dict = Depends(current_operator)) -> dict:
+    """Only a manager may assign, change or remove other people's work."""
+    if operator.get("role") != "manager":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Managers only")
+    return operator

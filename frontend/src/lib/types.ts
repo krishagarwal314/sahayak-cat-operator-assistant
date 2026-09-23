@@ -75,6 +75,8 @@ export interface MachineCard {
   attention_count: number
   quick_questions_hi: string[]
   quick_questions_en: string[]
+  identify_hi?: string
+  identify_en?: string
 }
 
 export interface Estimate {
@@ -313,4 +315,106 @@ export interface Guide extends Omit<GuideSummary, 'steps'> {
   intro_en: string
   intro_speech_hi: string
   steps: GuideStep[]
+}
+
+// ---------------------------------------------------------------- manager
+export interface TaskTypeOption {
+  id: string
+  families: string[]
+  icon: string
+  default_minutes: number
+  default_cycles: number
+  label_en: string
+  label_hi: string
+}
+
+export interface ManagerOperator {
+  id: string
+  name_en: string
+  name_hi: string
+  avatar_initials: string
+  certified_families: string[]
+  skill_scores: Record<string, number>
+  shift: string
+  site: string
+  experience_years?: number
+}
+
+export interface ManagerOptions {
+  operators: ManagerOperator[]
+  machines: { id: string; model: string; name_en: string; name_hi: string; family: string; site: string }[]
+  task_types: TaskTypeOption[]
+}
+
+export interface TeamMember {
+  operator: ManagerOperator
+  tasks: Task[]
+  done: number
+  total: number
+  planned_minutes: number
+  current_machine: string | null
+  active: boolean
+}
+
+export interface FleetMachine {
+  id: string
+  model: string
+  name_en: string
+  name_hi: string
+  family: string
+  site: string
+  status: Severity
+  health: number
+  counts: { critical: number; warning: number; info: number }
+  top_finding: Finding | null
+  fuel_pct: number | null
+  seatbelt: string | null
+  safety_score: number
+  operators: string[]
+}
+
+export interface ManagerOverview {
+  generated_at: string
+  team: TeamMember[]
+  fleet: FleetMachine[]
+  incidents: any[]
+  kpis: {
+    operators: number
+    operators_active: number
+    tasks_total: number
+    tasks_done: number
+    tasks_in_progress: number
+    machines_attention: number
+    machines_critical: number
+    incidents: number
+  }
+}
+
+export interface TaskDraft {
+  operator_id: string
+  machine_id: string
+  task_type: string
+  title_en: string
+  instructions_en: string
+  safety_note_en: string
+  location: string
+  priority: 'high' | 'medium' | 'low'
+  planned_start: string
+  planned_minutes: number
+  target_cycles?: number | null
+  hi?: { title?: string; instructions?: string; safety_note?: string; location?: string }
+}
+
+// ---------------------------------------------------------------- machine info
+export interface MachineAbout {
+  machine: { id: string; model: string; name_en: string; name_hi: string; short_hi: string; family: string; site: string }
+  identify_hi: string
+  identify_en: string
+  summary_hi: string
+  summary_en: string
+  parts: { icon: string; name_hi: string; name_en: string; what_hi: string; what_en: string }[]
+  safety: { icon: string; hi: string; en: string }[]
+  guides: { id: string; icon: string; color: string; title_hi: string; title_en: string; steps: number }[]
+  video: { youtube_id: string; title: string; channel: string; about_hi: string; about_en: string }
+  sections: { id: string; hi: string; en: string; speech_hi: string }[]
 }

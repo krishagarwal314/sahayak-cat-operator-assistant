@@ -38,6 +38,7 @@ PROFILES: dict[str, dict[str, str]] = {
     "lite": {
         "stt": "openai/whisper-small",
         "tts": "facebook/mms-tts-hin",
+        "tts_en": "facebook/mms-tts-eng",
         "translate": "facebook/nllb-200-distilled-600M",
         "embedder": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
         "intent_base": "ai4bharat/indic-bert",
@@ -49,6 +50,9 @@ PROFILES: dict[str, dict[str, str]] = {
         # VITS, 145M, streams instantly on CPU. Set TTS_MODEL=ai4bharat/IndicF5
         # for the higher fidelity (but heavier, reference-audio driven) option.
         "tts": "facebook/mms-tts-hin",
+        # The Hindi voice has no Latin letters at all, so English replies need
+        # their own model rather than being fed to the Hindi one.
+        "tts_en": "facebook/mms-tts-eng",
         # NLLB rather than the (better) IndicTrans2, for one blunt reason:
         # IndicTrans2 ships trust_remote_code that imports transformers.onnx,
         # which was removed in transformers v5, so it cannot load there at all.
@@ -63,6 +67,7 @@ PROFILES: dict[str, dict[str, str]] = {
     "quality": {
         "stt": "vasista22/whisper-hindi-medium",
         "tts": "ai4bharat/IndicF5",
+        "tts_en": "facebook/mms-tts-eng",
         # Same transformers v5 constraint as above - see the balanced profile.
         "translate": "facebook/nllb-200-distilled-1.3B",
         "embedder": "intfloat/multilingual-e5-base",
@@ -96,6 +101,7 @@ class Settings:
     profile = MODEL_PROFILE
     stt_model = _env("STT_MODEL", _P["stt"])
     tts_model = _env("TTS_MODEL", _P["tts"])
+    tts_model_en = _env("TTS_MODEL_EN", _P["tts_en"])
     translate_model = _env("TRANSLATE_MODEL", _P["translate"])
     embedder_model = _env("EMBEDDER_MODEL", _P["embedder"])
     intent_base_model = _env("INTENT_BASE_MODEL", _P["intent_base"])

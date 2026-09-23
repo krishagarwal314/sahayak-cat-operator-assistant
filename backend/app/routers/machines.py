@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from .. import db, security
 from ..schemas import SelectMachineRequest
 from ..services import anomaly, assistant, safety, site, telemetry, tasks as task_service
+from ..services.speech_text import to_speech
 
 router = APIRouter(prefix="/api/machines", tags=["machines"])
 
@@ -28,6 +29,43 @@ def select(
         "session": session,
         "machine": machine,
         "suggestions": assistant.suggestions(machine["id"], operator["id"]),
+    }
+
+
+@router.get("/{machine_id}/about")
+def about(machine_id: str, _: dict = Depends(security.current_operator)) -> dict:
+    """Everything an operator should hear about a machine before using it.
+
+    Returned as ordered sections, each with its own spoken text, so the page
+    can read itself top to bottom and highlight the part being read.
+    """
+    machine = db.machine(machine_id)
+    info = db.MACHINE_ABOUT.get(machine_id)
+    if machine is None or info is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown machine")
+
+    parts_hi = " ".join(f"{p['name_hi']}, {p['what_hi']}" for p in info["parts"])
+    parts_en = " ".join(f"{p['name_en']}: {p['what_en']}" for p in info["parts"])
+    safety_hi = " ".join(f"{i}. {s['hi']}" for i, s in enumerate(info["safety"], 1))
+    safety_en = " ".join(f"{i}. {s['en']}" for i, s in enumerate(info["safety"], 1))
+    guides = [db.GUIDES_BY_ID[g] for g in info["guides"] if g in db.GUIDES_BY_ID]
+
+    sections = [
+        {"id": "summary", "hi": f"{info['identify_hi']} {info['summary_hi']}", "en": f"{info['identify_en']} {info['summary_en']}"},
+        {"id": "parts", "hi": f"इसके मुख्य हिस्से। {parts_hi}", "en": f"Its main parts. {parts_en}"},
+        {"id": "safety", "hi": f"इस मशीन पर सुरक्षा के नियम। {safety_hi}", "en": f"Safety rules for this machine. {safety_en}"},
+        {"id": "guides", "hi": "इसे चलाना सीखने के लिए नीचे की तस्वीरें दबाइए। वीडियो भी देख सकते हैं।",
+         "en": "To learn to operate it, tap the pictures below. You can also watch the video."},
+    ]
+    for section in sections:
+        section["speech_hi"] = to_speech(section["hi"], slow=True)
+
+    return {
+        "machine": {k: machine[k] for k in ("id", "model", "name_en", "name_hi", "short_hi", "family", "site")},
+        **info,
+        "guides": [{"id": g["id"], "icon": g["icon"], "color": g["color"], "title_hi": g["title_hi"],
+                    "title_en": g["title_en"], "steps": len(g["steps"])} for g in guides],
+        "sections": sections,
     }
 
 

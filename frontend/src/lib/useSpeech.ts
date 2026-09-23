@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from './api'
-import { playBase64, playBlob, speakWithBrowser, stopSpeaking } from './audio'
+import { playBase64, playBlob, speakWithBrowser, stopSpeaking, type PlayResult } from './audio'
 import type { Lang } from './types'
 
 /**
@@ -13,6 +13,13 @@ import type { Lang } from './types'
 export function useSpeech() {
   const [speaking, setSpeaking] = useState(false)
   const [speakingId, setSpeakingId] = useState<string | null>(null)
+  // True when the browser refused to play without a fresh tap. The UI then
+  // makes the speaker button pulse so one tap brings the voice back.
+  const [blocked, setBlocked] = useState(false)
+  const noteResult = useCallback((result: PlayResult) => {
+    if (result === 'blocked') setBlocked(true)
+    else if (result === 'ended') setBlocked(false)
+  }, [])
   const tokenRef = useRef(0)
 
   useEffect(() => () => stopSpeaking(), [])
@@ -34,7 +41,7 @@ export function useSpeech() {
     try {
       const blob = await api.speak(text, lang, slow)
       if (tokenRef.current !== token) return
-      await playBlob(blob)
+      noteResult(await playBlob(blob))
     } catch {
       if (tokenRef.current !== token) return
       await speakWithBrowser(text, lang)
@@ -44,7 +51,7 @@ export function useSpeech() {
         setSpeakingId(null)
       }
     }
-  }, [])
+  }, [noteResult])
 
   /** Play audio the API already returned inline, with the same fallback. */
   const playInline = useCallback(
@@ -55,7 +62,7 @@ export function useSpeech() {
       setSpeaking(true)
       setSpeakingId(id ?? null)
       try {
-        if (base64) await playBase64(base64)
+        if (base64) noteResult(await playBase64(base64))
         else await speakWithBrowser(fallbackText, lang)
       } finally {
         if (tokenRef.current === token) {
@@ -64,8 +71,8 @@ export function useSpeech() {
         }
       }
     },
-    [],
+    [noteResult],
   )
 
-  return { speak, playInline, stop, speaking, speakingId }
+  return { speak, playInline, stop, speaking, speakingId, blocked }
 }
