@@ -1,0 +1,127 @@
+{
+  "modules": [
+    {
+      "id": "TR-EXC-01",
+      "family": "excavator",
+      "format": "video",
+      "duration_min": 6,
+      "level": "beginner",
+      "title_en": "Correct trenching technique on the CAT 320",
+      "title_hi": "कैट 320 पर सही ट्रेंचिंग तकनीक",
+      "summary_en": "Bucket angle, boom sequencing and spoil placement for a clean, stable trench wall.",
+      "summary_hi": "साफ़ और मज़बूत ट्रेंच दीवार के लिए बकेट का कोण, बूम क्रम और मिट्टी रखने का तरीका।",
+      "skill_tag": "trench_excavation",
+      "thumbnail_hue": 42
+    },
+    {
+      "id": "TR-EXC-02",
+      "family": "excavator",
+      "format": "simulation",
+      "duration_min": 12,
+      "level": "intermediate",
+      "title_en": "Truck loading simulator - reduce swing time",
+      "title_hi": "ट्रक लोडिंग सिम्युलेटर - स्विंग समय घटाएँ",
+      "summary_en": "Interactive drill that scores your swing angle and cycle time against the site benchmark.",
+      "summary_hi": "इंटरैक्टिव अभ्यास जो आपके स्विंग कोण और साइकिल समय को साइट बेंचमार्क से मापता है।",
+      "skill_tag": "truck_loading",
+      "thumbnail_hue": 196
+    },
+    {
+      "id": "TR-GEN-01",
+      "family": "all",
+      "format": "video",
+      "duration_min": 4,
+      "level": "beginner",
+      "title_en": "Pre-start walkaround inspection",
+      "title_hi": "शुरू करने से पहले मशीन की जाँच",
+      "summary_en": "The eleven point walkaround every operator must complete before starting the engine.",
+      "summary_hi": "इंजन चालू करने से पहले हर ऑपरेटर के लिए ग्यारह बिंदुओं की जाँच।",
+      "skill_tag": "safety",
+      "thumbnail_hue": 8
+    },
+    {
+      "id": "TR-GEN-02",
+      "family": "all",
+      "format": "video",
+      "duration_min": 5,
+      "level": "beginner",
+      "title_en": "Cutting idle time and saving fuel",
+      "title_hi": "आइडल समय घटाएँ और ईंधन बचाएँ",
+      "summary_en": "Why idling above ten minutes costs fuel and engine life, and the habits that fix it.",
+      "summary_hi": "दस मिनट से ज़्यादा आइडलिंग ईंधन और इंजन दोनों को नुकसान क्यों पहुँचाती है, और इसे ठीक करने की आदतें।",
+      "skill_tag": "idling",
+      "thumbnail_hue": 142
+    },
+    {
+      "id": "TR-LDR-01",
+      "family": "loader",
+      "format": "video",
+      "duration_min": 7,
+      "level": "intermediate",
+      "title_en": "Y-pattern loading for the CAT 950 GC",
+      "title_hi": "कैट 950 जीसी के लिए वाई-पैटर्न लोडिंग",
+      "summary_en": "The shortest travel path between stockpile and truck, and how to keep the bucket full.",
+      "summary_hi": "स्टॉकपाइल और ट्रक के बीच सबसे छोटा रास्ता, और बकेट को पूरा भरा रखने का तरीका।",
+      "skill_tag": "truck_loading",
+      "thumbnail_hue": 268
+    },
+    {
+      "id": "TR-LDR-02",
+      "family": "loader",
+      "format": "video",
+      "duration_min": 5,
+      "level": "beginner",
+      "title_en": "Reading the payload display correctly",
+      "title_hi": "पेलोड डिस्प्ले को सही पढ़ना",
+      "summary_en": "Avoid overload violations by understanding live, target and cumulative payload readings.",
+      "summary_hi": "लाइव, टारगेट और कुल पेलोड रीडिंग समझकर ओवरलोड उल्लंघन से बचें।",
+      "skill_tag": "payload",
+      "thumbnail_hue": 318
+    },
+    {
+      "id": "TR-DZR-01",
+      "family": "dozer",
+      "format": "video",
+      "duration_min": 6,
+      "level": "intermediate",
+      "title_en": "Slot dozing and blade load control",
+      "title_hi": "स्लॉट डोज़िंग और ब्लेड लोड नियंत्रण",
+      "summary_en": "Move more material per pass without stalling the torque converter.",
+      "summary_hi": "टॉर्क कन्वर्टर रोके बिना हर पास में ज़्यादा मटीरियल हटाएँ।",
+      "skill_tag": "haul_road_maintenance",
+      "thumbnail_hue": 88
+    }
+  ],
+  "instructors": [
+    {
+      "id": "IN-01",
+      "name_en": "Vikram Singh",
+      "name_hi": "विक्रम सिंह",
+      "expertise_en": "Excavator technique and productivity",
+      "expertise_hi": "एक्सकेवेटर तकनीक और उत्पादकता",
+      "languages": ["hi", "en"],
+      "rating": 4.8,
+      "slots": ["Today 16:30", "Tomorrow 08:00", "Tomorrow 15:00"]
+    },
+    {
+      "id": "IN-02",
+      "name_en": "Meera Nair",
+      "name_hi": "मीरा नायर",
+      "expertise_en": "Site safety and incident prevention",
+      "expertise_hi": "साइट सुरक्षा और दुर्घटना रोकथाम",
+      "languages": ["hi", "en", "ml"],
+      "rating": 4.9,
+      "slots": ["Today 17:00", "Tomorrow 09:30"]
+    },
+    {
+      "id": "IN-03",
+      "name_en": "Arjun Patel",
+      "name_hi": "अर्जुन पटेल",
+      "expertise_en": "Loader and dozer operations",
+      "expertise_hi": "लोडर और डोज़र संचालन",
+      "languages": ["hi", "en", "gu"],
+      "rating": 4.6,
+      "slots": ["Tomorrow 11:00", "Tomorrow 16:00"]
+    }
+  ]
+}

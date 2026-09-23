@@ -1,0 +1,71 @@
+[
+  {
+    "id": "OP1001",
+    "username": "OP1001",
+    "password": "cat1234",
+    "name_en": "Ramesh Kumar",
+    "name_hi": "रमेश कुमार",
+    "role": "operator",
+    "language": "hi",
+    "shift": "Day (07:00 - 16:00)",
+    "experience_years": 7,
+    "certified_families": [
+      "excavator",
+      "loader"
+    ],
+    "site": "Pit B",
+    "supervisor": "MG2001",
+    "avatar_initials": "RK",
+    "skill_scores": {
+      "excavator": 0.88,
+      "loader": 0.74,
+      "dozer": 0.41
+    },
+    "shift_hi": "दिन की पाली (सुबह 7 से शाम 4)"
+  },
+  {
+    "id": "OP1002",
+    "username": "OP1002",
+    "password": "cat1234",
+    "name_en": "Suresh Yadav",
+    "name_hi": "सुरेश यादव",
+    "role": "operator",
+    "language": "hi",
+    "shift": "Day (07:00 - 16:00)",
+    "experience_years": 3,
+    "certified_families": [
+      "loader",
+      "dozer"
+    ],
+    "site": "Stockpile Yard A",
+    "supervisor": "MG2001",
+    "avatar_initials": "SY",
+    "skill_scores": {
+      "excavator": 0.35,
+      "loader": 0.81,
+      "dozer": 0.69
+    },
+    "shift_hi": "दिन की पाली (सुबह 7 से शाम 4)"
+  },
+  {
+    "id": "MG2001",
+    "username": "MG2001",
+    "password": "cat1234",
+    "name_en": "Anita Sharma",
+    "name_hi": "अनीता शर्मा",
+    "role": "manager",
+    "language": "en",
+    "shift": "Day (07:00 - 17:00)",
+    "experience_years": 12,
+    "certified_families": [
+      "excavator",
+      "loader",
+      "dozer"
+    ],
+    "site": "Site Office",
+    "supervisor": null,
+    "avatar_initials": "AS",
+    "skill_scores": {},
+    "shift_hi": "दिन की पाली (सुबह 7 से शाम 5)"
+  }
+]

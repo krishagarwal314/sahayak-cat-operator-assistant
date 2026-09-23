@@ -1,0 +1,168 @@
+[
+  {
+    "id": "EXC001",
+    "family": "excavator",
+    "model": "CAT 320",
+    "name_en": "CAT 320 Hydraulic Excavator",
+    "name_hi": "कैट 320 हाइड्रोलिक एक्सकेवेटर",
+    "short_hi": "एक्सकेवेटर",
+    "icon": "excavator",
+    "year": 2022,
+    "site": "Pit B - North Bench",
+    "fuel_capacity_l": 410,
+    "service_interval_hours": 500,
+    "last_service_hours": 1290.0,
+    "nominal_cycle_seconds": 24,
+    "sensors": {
+      "fuel_level_pct": { "label_en": "Fuel level", "label_hi": "ईंधन स्तर", "unit": "%", "warn_below": 20, "crit_below": 10 },
+      "def_level_pct": { "label_en": "DEF level", "label_hi": "डीईएफ स्तर", "unit": "%", "warn_below": 15, "crit_below": 8 },
+      "engine_temp_c": { "label_en": "Engine temperature", "label_hi": "इंजन तापमान", "unit": "°C", "warn_above": 103, "crit_above": 110 },
+      "hydraulic_temp_c": { "label_en": "Hydraulic oil temperature", "label_hi": "हाइड्रोलिक तेल तापमान", "unit": "°C", "warn_above": 88, "crit_above": 96 },
+      "hydraulic_pressure_bar": { "label_en": "Hydraulic pressure", "label_hi": "हाइड्रोलिक दबाव", "unit": "bar", "warn_below": 240, "crit_below": 210 },
+      "engine_hours": { "label_en": "Engine hours", "label_hi": "इंजन घंटे", "unit": "h" },
+      "oil_pressure_kpa": { "label_en": "Engine oil pressure", "label_hi": "इंजन ऑयल दबाव", "unit": "kPa", "warn_below": 240, "crit_below": 200 },
+      "battery_v": { "label_en": "Battery", "label_hi": "बैटरी", "unit": "V", "warn_below": 12.2, "crit_below": 11.8 },
+      "track_tension_pct": { "label_en": "Track tension", "label_hi": "ट्रैक टेंशन", "unit": "%", "warn_below": 55, "crit_below": 40 },
+      "idling_time_min": { "label_en": "Idling time today", "label_hi": "आज का आइडलिंग समय", "unit": "min", "warn_above": 45, "crit_above": 75 },
+      "load_cycles": { "label_en": "Load cycles today", "label_hi": "आज के लोड साइकिल", "unit": "cycles" },
+      "swing_cycles": { "label_en": "Swing cycles", "label_hi": "स्विंग साइकिल", "unit": "cycles" },
+      "bucket_payload_kg": { "label_en": "Average bucket payload", "label_hi": "औसत बकेट पेलोड", "unit": "kg" },
+      "seatbelt": { "label_en": "Seatbelt", "label_hi": "सीट बेल्ट", "unit": "" },
+      "proximity_objects": { "label_en": "Objects in proximity zone", "label_hi": "नज़दीकी क्षेत्र में वस्तुएँ", "unit": "" },
+      "ambient_temp_c": { "label_en": "Ambient temperature", "label_hi": "बाहरी तापमान", "unit": "°C" }
+    },
+    "supported_intents": [
+      "FUEL_STATUS", "DEF_STATUS", "ENGINE_TEMP", "ENGINE_HOURS", "OIL_PRESSURE", "BATTERY_STATUS",
+      "HYDRAULIC_TEMP", "HYDRAULIC_PRESSURE", "TRACK_TENSION", "IDLE_TIME", "LOAD_CYCLES",
+      "PAYLOAD_STATUS", "MACHINE_HEALTH", "ACTIVE_ALERTS", "MAINTENANCE_DUE", "SAFETY_STATUS",
+      "SEATBELT_STATUS", "PROXIMITY_HAZARD", "REPORT_INCIDENT", "TASK_TODAY", "TASK_NEXT",
+      "TASK_TIME_ESTIMATE", "TASK_PROGRESS", "SHIFT_SUMMARY", "PRODUCTIVITY", "ANOMALY_STATUS",
+      "TRAINING_HELP", "HOW_TO_OPERATE", "WEATHER_CONDITIONS", "SWITCH_MACHINE", "GREETING", "HELP"
+    ],
+    "unsupported_note_hi": "यह सेंसर एक्सकेवेटर पर उपलब्ध नहीं है।",
+    "quick_questions_hi": [
+      "कितना ईंधन बचा है?",
+      "मशीन में कोई खराबी है क्या?",
+      "आज का मेरा काम क्या है?",
+      "यह काम पूरा होने में कितना समय लगेगा?",
+      "हाइड्रोलिक तेल का तापमान बताओ"
+    ],
+    "quick_questions_en": [
+      "How much fuel is left?",
+      "Is anything wrong with the machine?",
+      "What is my task today?",
+      "How long will this task take?",
+      "What is the hydraulic oil temperature?"
+    ]
+  },
+  {
+    "id": "LDR001",
+    "family": "loader",
+    "model": "CAT 950 GC",
+    "name_en": "CAT 950 GC Wheel Loader",
+    "name_hi": "कैट 950 जीसी व्हील लोडर",
+    "short_hi": "लोडर",
+    "icon": "loader",
+    "year": 2023,
+    "site": "Stockpile Yard A",
+    "fuel_capacity_l": 280,
+    "service_interval_hours": 500,
+    "last_service_hours": 820.0,
+    "nominal_cycle_seconds": 38,
+    "sensors": {
+      "fuel_level_pct": { "label_en": "Fuel level", "label_hi": "ईंधन स्तर", "unit": "%", "warn_below": 20, "crit_below": 10 },
+      "def_level_pct": { "label_en": "DEF level", "label_hi": "डीईएफ स्तर", "unit": "%", "warn_below": 15, "crit_below": 8 },
+      "engine_temp_c": { "label_en": "Engine temperature", "label_hi": "इंजन तापमान", "unit": "°C", "warn_above": 102, "crit_above": 109 },
+      "transmission_temp_c": { "label_en": "Transmission temperature", "label_hi": "ट्रांसमिशन तापमान", "unit": "°C", "warn_above": 95, "crit_above": 105 },
+      "engine_hours": { "label_en": "Engine hours", "label_hi": "इंजन घंटे", "unit": "h" },
+      "oil_pressure_kpa": { "label_en": "Engine oil pressure", "label_hi": "इंजन ऑयल दबाव", "unit": "kPa", "warn_below": 240, "crit_below": 200 },
+      "battery_v": { "label_en": "Battery", "label_hi": "बैटरी", "unit": "V", "warn_below": 12.2, "crit_below": 11.8 },
+      "tire_pressure_psi": { "label_en": "Tyre pressure", "label_hi": "टायर दबाव", "unit": "psi", "warn_below": 58, "crit_below": 48 },
+      "payload_kg": { "label_en": "Current payload", "label_hi": "वर्तमान पेलोड", "unit": "kg", "warn_above": 5600, "crit_above": 6200 },
+      "bucket_payload_kg": { "label_en": "Average bucket payload", "label_hi": "औसत बकेट पेलोड", "unit": "kg" },
+      "idling_time_min": { "label_en": "Idling time today", "label_hi": "आज का आइडलिंग समय", "unit": "min", "warn_above": 40, "crit_above": 70 },
+      "load_cycles": { "label_en": "Load cycles today", "label_hi": "आज के लोड साइकिल", "unit": "cycles" },
+      "seatbelt": { "label_en": "Seatbelt", "label_hi": "सीट बेल्ट", "unit": "" },
+      "proximity_objects": { "label_en": "Objects in proximity zone", "label_hi": "नज़दीकी क्षेत्र में वस्तुएँ", "unit": "" },
+      "ambient_temp_c": { "label_en": "Ambient temperature", "label_hi": "बाहरी तापमान", "unit": "°C" }
+    },
+    "supported_intents": [
+      "FUEL_STATUS", "DEF_STATUS", "ENGINE_TEMP", "ENGINE_HOURS", "OIL_PRESSURE", "BATTERY_STATUS",
+      "TRANSMISSION_TEMP", "TIRE_PRESSURE", "PAYLOAD_STATUS", "IDLE_TIME", "LOAD_CYCLES",
+      "MACHINE_HEALTH", "ACTIVE_ALERTS", "MAINTENANCE_DUE", "SAFETY_STATUS", "SEATBELT_STATUS",
+      "PROXIMITY_HAZARD", "REPORT_INCIDENT", "TASK_TODAY", "TASK_NEXT", "TASK_TIME_ESTIMATE",
+      "TASK_PROGRESS", "SHIFT_SUMMARY", "PRODUCTIVITY", "ANOMALY_STATUS", "TRAINING_HELP",
+      "HOW_TO_OPERATE", "WEATHER_CONDITIONS", "SWITCH_MACHINE", "GREETING", "HELP"
+    ],
+    "unsupported_note_hi": "यह सेंसर लोडर पर उपलब्ध नहीं है।",
+    "quick_questions_hi": [
+      "कितना ईंधन बचा है?",
+      "बकेट में कितना वज़न है?",
+      "आज कितने लोड साइकिल हुए?",
+      "मशीन में कोई खराबी है क्या?",
+      "यह काम पूरा होने में कितना समय लगेगा?"
+    ],
+    "quick_questions_en": [
+      "How much fuel is left?",
+      "What is the current payload?",
+      "How many load cycles today?",
+      "Is anything wrong with the machine?",
+      "How long will this task take?"
+    ]
+  },
+  {
+    "id": "DZR001",
+    "family": "dozer",
+    "model": "CAT D6",
+    "name_en": "CAT D6 Track Type Dozer",
+    "name_hi": "कैट डी6 ट्रैक डोज़र",
+    "short_hi": "डोज़र",
+    "icon": "dozer",
+    "year": 2021,
+    "site": "Haul Road Section 4",
+    "fuel_capacity_l": 430,
+    "service_interval_hours": 500,
+    "last_service_hours": 2150.0,
+    "nominal_cycle_seconds": 52,
+    "sensors": {
+      "fuel_level_pct": { "label_en": "Fuel level", "label_hi": "ईंधन स्तर", "unit": "%", "warn_below": 20, "crit_below": 10 },
+      "def_level_pct": { "label_en": "DEF level", "label_hi": "डीईएफ स्तर", "unit": "%", "warn_below": 15, "crit_below": 8 },
+      "engine_temp_c": { "label_en": "Engine temperature", "label_hi": "इंजन तापमान", "unit": "°C", "warn_above": 104, "crit_above": 111 },
+      "transmission_temp_c": { "label_en": "Transmission temperature", "label_hi": "ट्रांसमिशन तापमान", "unit": "°C", "warn_above": 96, "crit_above": 106 },
+      "engine_hours": { "label_en": "Engine hours", "label_hi": "इंजन घंटे", "unit": "h" },
+      "oil_pressure_kpa": { "label_en": "Engine oil pressure", "label_hi": "इंजन ऑयल दबाव", "unit": "kPa", "warn_below": 240, "crit_below": 200 },
+      "battery_v": { "label_en": "Battery", "label_hi": "बैटरी", "unit": "V", "warn_below": 12.2, "crit_below": 11.8 },
+      "track_tension_pct": { "label_en": "Track tension", "label_hi": "ट्रैक टेंशन", "unit": "%", "warn_below": 55, "crit_below": 40 },
+      "undercarriage_wear_pct": { "label_en": "Undercarriage wear", "label_hi": "अंडरकैरिज घिसाव", "unit": "%", "warn_above": 65, "crit_above": 82 },
+      "blade_load_pct": { "label_en": "Blade load", "label_hi": "ब्लेड लोड", "unit": "%", "warn_above": 95 },
+      "idling_time_min": { "label_en": "Idling time today", "label_hi": "आज का आइडलिंग समय", "unit": "min", "warn_above": 45, "crit_above": 75 },
+      "load_cycles": { "label_en": "Push cycles today", "label_hi": "आज के पुश साइकिल", "unit": "cycles" },
+      "seatbelt": { "label_en": "Seatbelt", "label_hi": "सीट बेल्ट", "unit": "" },
+      "proximity_objects": { "label_en": "Objects in proximity zone", "label_hi": "नज़दीकी क्षेत्र में वस्तुएँ", "unit": "" },
+      "ambient_temp_c": { "label_en": "Ambient temperature", "label_hi": "बाहरी तापमान", "unit": "°C" }
+    },
+    "supported_intents": [
+      "FUEL_STATUS", "DEF_STATUS", "ENGINE_TEMP", "ENGINE_HOURS", "OIL_PRESSURE", "BATTERY_STATUS",
+      "TRANSMISSION_TEMP", "TRACK_TENSION", "UNDERCARRIAGE_WEAR", "IDLE_TIME", "LOAD_CYCLES",
+      "MACHINE_HEALTH", "ACTIVE_ALERTS", "MAINTENANCE_DUE", "SAFETY_STATUS", "SEATBELT_STATUS",
+      "PROXIMITY_HAZARD", "REPORT_INCIDENT", "TASK_TODAY", "TASK_NEXT", "TASK_TIME_ESTIMATE",
+      "TASK_PROGRESS", "SHIFT_SUMMARY", "PRODUCTIVITY", "ANOMALY_STATUS", "TRAINING_HELP",
+      "HOW_TO_OPERATE", "WEATHER_CONDITIONS", "SWITCH_MACHINE", "GREETING", "HELP"
+    ],
+    "unsupported_note_hi": "यह सेंसर डोज़र पर उपलब्ध नहीं है।",
+    "quick_questions_hi": [
+      "कितना ईंधन बचा है?",
+      "ट्रैक टेंशन ठीक है क्या?",
+      "अंडरकैरिज कितना घिसा है?",
+      "आज का मेरा काम क्या है?",
+      "मशीन में कोई खराबी है क्या?"
+    ],
+    "quick_questions_en": [
+      "How much fuel is left?",
+      "Is the track tension fine?",
+      "How worn is the undercarriage?",
+      "What is my task today?",
+      "Is anything wrong with the machine?"
+    ]
+  }
+]

@@ -1,0 +1,33 @@
+# ---- web layer ----
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+pydantic>=2.7
+PyJWT>=2.8
+
+# ---- ML runtime ----
+# Install torch first for your platform, e.g.
+#   CPU  : pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   CUDA : pip install torch --index-url https://download.pytorch.org/whl/cu121
+torch>=2.2
+transformers>=4.44
+sentencepiece>=0.2
+accelerate>=0.33
+safetensors>=0.4
+numpy>=1.26
+scipy>=1.11
+huggingface_hub>=0.24
+
+# ---- audio ----
+soundfile>=0.12
+librosa>=0.10
+
+# ---- intent classifier training (optional, only needed for train.py) ----
+scikit-learn>=1.4
+datasets>=2.20
+
+# ---- optional upgrades -------------------------------------------------
+# IndicTrans2 tokenizer/postprocessor (TRANSLATE_MODEL=ai4bharat/indictrans2-*)
+#   pip install IndicTransToolkit
+# IndicF5 text-to-speech (TTS_MODEL=ai4bharat/IndicF5)
+#   pip install f5-tts

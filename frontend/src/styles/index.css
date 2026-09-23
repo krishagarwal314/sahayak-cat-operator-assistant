@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root { color-scheme: dark; }
+
+  html, body, #root { height: 100%; }
+
+  body {
+    @apply bg-ink-900 text-slate-100 antialiased;
+    /* Faint diagonal machined texture so large dark panels do not read as flat. */
+    background-image:
+      radial-gradient(1200px 600px at 12% -10%, rgba(255, 205, 17, 0.06), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(61, 214, 140, 0.05), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  /* Devanagari needs a little more line height than Latin to stay legible. */
+  :lang(hi), .lang-hi { line-height: 1.75; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-ink-500 rounded-full border-2 border-solid; border-color: transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-ink-500/80; }
+
+  :focus-visible { @apply outline-none ring-2 ring-cat/70 ring-offset-2 ring-offset-ink-900; }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-line-soft bg-ink-800/70 shadow-panel backdrop-blur-sm;
+  }
+  .panel-head {
+    @apply flex items-center justify-between gap-3 border-b border-line-soft px-5 py-3.5;
+  }
+  .label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-mute;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+           transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45;
+  }
+  .btn-primary {
+    @apply btn bg-cat text-ink-900 hover:bg-cat-dark shadow-[0_6px_20px_-8px_rgba(255,205,17,0.8)];
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-ink-700/60 text-slate-200 hover:border-cat/50 hover:bg-ink-600/70;
+  }
+  .btn-quiet {
+    @apply btn text-mute hover:bg-ink-700/70 hover:text-slate-200;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-ink-700/70 px-3 py-1.5
+           text-xs font-medium text-slate-300 transition-colors hover:border-cat/50 hover:text-white;
+  }
+  .field {
+    @apply w-full rounded-xl border border-line bg-ink-900/70 px-4 py-3 text-[15px] text-slate-100
+           placeholder:text-mute/70 focus:border-cat/60 focus:outline-none;
+  }
+  .stat-value { @apply font-mono text-2xl font-semibold tabular-nums tracking-tight; }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.35;
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 7px);
+  }
+  .scroll-fade {
+    mask-image: linear-gradient(to bottom, transparent, black 14px, black calc(100% - 14px), transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

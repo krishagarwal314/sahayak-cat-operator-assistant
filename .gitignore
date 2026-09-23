@@ -1,0 +1,32 @@
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# models and generated artefacts
+backend/models/
+backend/data/
+backend/assets/ref_audio/*.wav
+!backend/assets/ref_audio/.gitkeep
+
+# node
+node_modules/
+frontend/dist/
+.vite/
+
+# env and editors
+.env
+.env.local
+.DS_Store
+.idea/
+*.swp
+
+# logs
+*.log
+
+# build artefacts
+frontend/tsconfig.tsbuildinfo
+*.tsbuildinfo
