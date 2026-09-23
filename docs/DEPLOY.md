@@ -103,7 +103,10 @@ cd backend
 EAGER_LOAD_MODELS=1 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Then, in a second terminal, for an HTTPS origin with no signup:
+Then, in a second terminal, for an HTTPS origin with no signup. Note that
+Cloudflare quick tunnels can hand out IPv6-only hostnames, which are unreachable
+from a network without IPv6 — if your provider offers its own port sharing,
+prefer that:
 
 ```bash
 wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
@@ -161,6 +164,7 @@ curl -s -X POST localhost:8000/api/system/reset -H "Authorization: Bearer $TOKEN
 | Frontend shows the JSON API response | `frontend/dist` was never built | `cd frontend && npm run build`, then restart the server |
 | Out of memory loading models | Too small an instance for the `quality` profile | `MODEL_PROFILE=lite` or the default `balanced` |
 | Tunnel URL died mid-demo | Quick tunnels are ephemeral | Restart cloudflared; on Lightning use the Studio's own port sharing instead |
+| `DNS_PROBE_POSSIBLE` on the tunnel URL, but `curl` to it works **from the server** | Cloudflare quick tunnels sometimes publish an IPv6-only record, and your network has no IPv6 | Not fixable from the app side. Use the provider's own port sharing (`*.cloudspaces.litng.ai` on Lightning) or ngrok, both of which have IPv4. Diagnose on the *client* machine with `curl -6 -sI https://cloudflare.com` — if that fails you have no IPv6. |
 
 ---
 

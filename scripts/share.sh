@@ -5,6 +5,16 @@
 #
 # Run this in a SECOND terminal, with scripts/demo.sh still running in the first.
 # The microphone only works on a secure origin, which is the whole point of this.
+#
+# PREFER your cloud provider's own port sharing if it has one (Lightning AI
+# does). Cloudflare quick tunnels sometimes publish an IPv6-only record for the
+# generated hostname, and on a network without IPv6 the name then half-resolves
+# with nowhere to connect - the browser reports a DNS error and the tunnel looks
+# broken when it is actually fine. Check from the machine that will open the
+# link, not from the server:
+#     curl -4 -sI https://<generated>.trycloudflare.com   # no IPv4 path => this
+# If that fails while the same URL works from the server, use the provider'"'"'s
+# port sharing or ngrok instead.
 
 set -uo pipefail
 PORT="${PORT:-8000}"
