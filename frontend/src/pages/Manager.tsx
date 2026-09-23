@@ -543,6 +543,24 @@ export default function Manager() {
             </section>
 
             <section>
+              <h2 className="label mb-3">{lang === 'hi' ? 'ट्रेनिंग बुकिंग' : 'Trainer bookings'}</h2>
+              <div className="panel divide-y divide-line-soft">
+                {(overview?.bookings ?? []).length === 0 && (
+                  <p className="p-5 text-center text-sm text-mute">{lang === 'hi' ? 'अभी कोई बुकिंग नहीं' : 'No bookings yet'}</p>
+                )}
+                {(overview?.bookings ?? []).map((b) => (
+                  <div key={b.id} className="flex items-center gap-3 p-4">
+                    <Pictogram name="person" className="h-5 w-5 shrink-0 text-cat" />
+                    <p className="text-sm text-slate-100">
+                      <b>{names[b.operator_id] ?? b.operator_id}</b> → {lang === 'hi' ? b.instructor_name_hi : b.instructor_name_en}
+                      <span className="ml-2 font-mono text-xs text-mute">{b.slot}</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section>
               <h2 className="label mb-3">{lang === 'hi' ? 'घटनाएँ' : 'Incident reports'}</h2>
               <div className="panel divide-y divide-line-soft">
                 {incidents.length === 0 && <p className="p-5 text-center text-sm text-ok">{lang === 'hi' ? 'कोई घटना नहीं' : 'No incidents reported'}</p>}

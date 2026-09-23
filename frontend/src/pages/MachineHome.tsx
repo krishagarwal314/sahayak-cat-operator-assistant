@@ -131,6 +131,10 @@ function warningsFor(detail: MachineDetail): Warning[] {
   if (Number(sensors.proximity_objects?.value ?? 0) > 0) {
     out.push({ key: 'near', icon: 'proximity', severity: 'crit', hi: 'मशीन के पास कोई है। रुकिए और देखिए।', en: 'Someone is near the machine. Stop and look.' })
   }
+  // Predicted risk, weather, night work and fatigue - for every machine.
+  for (const extra of (detail as MachineDetail & { safety_extra?: Warning[] }).safety_extra ?? []) {
+    out.push({ key: extra.key, icon: extra.icon, severity: extra.severity, hi: extra.hi, en: extra.en })
+  }
   const findings = [...detail.health.findings]
     .filter((f) => f.severity !== 'info' && !/SEATBELT|PROXIMITY/.test(f.code))
     .sort((a, b) => (a.severity === 'critical' ? 0 : 1) - (b.severity === 'critical' ? 0 : 1))

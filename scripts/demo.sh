@@ -54,6 +54,14 @@ if ! "$PY" -c "from phonemizer import phonemize; assert phonemize('machine', lan
   "$PY" -m pip install -q phonemizer || true
 fi
 
+# The task-time and safety-risk models take seconds to train on any CPU, so
+# train them here if they are missing rather than asking anyone to.
+if [[ ! -f "${ROOT}/backend/models/ml/task_time.joblib" || ! -f "${ROOT}/backend/models/ml/safety_risk.joblib" ]]; then
+  printf '\n%s\n' "$(bold '==> training task-time and safety-risk models (a few seconds)')"
+  "$PY" -c "import sklearn" >/dev/null 2>&1 || "$PY" -m pip install -q scikit-learn pandas
+  ( cd "${ROOT}/backend" && "$PY" -m app.ml.train_all ) | sed 's/^/  /' || echo "  model training failed - estimates fall back to nearest neighbours"
+fi
+
 # ---------------------------------------------------------------- frontend
 # Always rebuild. Only building when dist/ was missing meant a pulled UI change
 # was never served - the old build just stayed in place. It takes seconds.
@@ -117,6 +125,8 @@ check_model tts   "text to speech (Hindi)"   yes
 check_model tts_en "text to speech (English)" yes
 check_model embedder "semantic intent matching" no
 check_model face  "face login (camera)"      no
+if [[ -f "${ROOT}/backend/models/ml/task_time.joblib" ]]; then ok "task time model trained"; else bad "task time model missing"; fi
+if [[ -f "${ROOT}/backend/models/ml/safety_risk.joblib" ]]; then ok "safety risk model trained"; else bad "safety risk model missing"; fi
 
 command -v ffmpeg >/dev/null 2>&1 && ok "ffmpeg present (decodes browser audio)" \
   || bad "ffmpeg MISSING - voice input will fail. Run: apt-get install -y ffmpeg"

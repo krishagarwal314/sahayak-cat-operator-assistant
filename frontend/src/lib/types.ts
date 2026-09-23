@@ -378,6 +378,7 @@ export interface ManagerOverview {
   team: TeamMember[]
   fleet: FleetMachine[]
   incidents: any[]
+  bookings?: any[]
   kpis: {
     operators: number
     operators_active: number

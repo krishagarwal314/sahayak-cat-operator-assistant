@@ -168,14 +168,29 @@ def estimate(task: dict, *, machine_id: str | None = None, operator_id: str | No
     spread = (high_rate - low_rate) / weighted_rate if weighted_rate else 1.0
     close = sum(1 for w in weights if w > 0.35)
     confidence = max(0.35, min(0.95, 0.9 - spread * 0.5 + close / (K * 8)))
+    low_minutes, high_minutes, basis = low_rate * units, high_rate * units, "history"
+
+    # The trained model, when present, replaces the neighbour average. The
+    # neighbours stay: they still supply the named factors and the sample count.
+    from ..ml import task_time
+
+    learned = task_time.predict({
+        "task_type": task["task_type"], "machine_family": ctx["machine_family"],
+        "weather": ctx["weather"], "ground": ctx["ground"], "shift": ctx["shift"],
+        "ambient_temp_c": ctx["ambient_temp_c"], "operator_skill": ctx["operator_skill"], "units": units,
+    })
+    if learned:
+        expected, low_minutes, high_minutes, basis = learned["expected"], learned["low"], learned["high"], "model"
+        width = (high_minutes - low_minutes) / expected if expected else 1.0
+        confidence = max(0.4, min(0.95, 1.0 - width * 0.6))
 
     return {
         "expected_minutes": round(expected),
-        "low_minutes": round(low_rate * units),
-        "high_minutes": round(high_rate * units),
+        "low_minutes": round(low_minutes),
+        "high_minutes": round(high_minutes),
         "confidence": round(confidence, 2),
         "samples": len(scored),
-        "basis": "history",
+        "basis": basis,
         "planned_minutes": round(planned),
         "delta_vs_planned": round(expected - planned),
         "factors": [{"label_en": f.label_en, "label_hi": f.label_hi, "effect_pct": f.effect_pct}

@@ -94,6 +94,8 @@ def detail(machine_id: str, operator: dict = Depends(security.current_operator))
         "suggestions": assistant.suggestions(machine_id, operator["id"]),
         "supported_intents": sorted(assistant.supported_intents(machine_id)),
         "video": db.MACHINE_ABOUT.get(machine_id, {}).get("video"),
+        # Predicted risk, working conditions and fatigue, for every machine.
+        "safety_extra": safety.extra_warnings(machine_id, operator["id"]),
         "safety_rules": db.MACHINE_ABOUT.get(machine_id, {}).get("safety", []),
     }
 

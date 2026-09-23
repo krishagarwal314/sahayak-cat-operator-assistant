@@ -157,6 +157,7 @@ def overview(_: dict = Depends(security.current_manager)) -> dict:
         "team": team,
         "fleet": fleet,
         "incidents": db.incidents_for()[:20],
+        "bookings": sorted(db.BOOKINGS, key=lambda b: b["created_at"], reverse=True)[:20],
         "kpis": {
             "operators": len(team),
             "operators_active": sum(1 for t in team if t["active"]),

@@ -230,6 +230,13 @@ function VoiceDock({ machineId, answer, setAnswer, error, setError, onResult }: 
                 <Pictogram name={speakingId === 'answer' ? 'pause' : 'repeat'} className="h-7 w-7 text-cat" />
                 {lang === 'hi' ? 'फिर सुनें' : 'Again'}
               </button>
+              {card?.type === 'training' && (
+                <button onClick={() => { setAnswer(null); navigate('/learn#teachers') }}
+                  className="flex h-14 flex-[1.4] items-center justify-center gap-2 rounded-2xl bg-ok text-base font-extrabold text-ink-900">
+                  <Pictogram name="person" className="h-7 w-7" />
+                  {lang === 'hi' ? 'टीचर बुक करें' : 'Book a trainer'}
+                </button>
+              )}
               {card?.type === 'guide' && (
                 <button onClick={() => { setAnswer(null); navigate(`/guide/${card.guide_id}`) }}
                   className="flex h-14 flex-[1.4] items-center justify-center gap-2 rounded-2xl bg-ok text-base font-extrabold text-ink-900">

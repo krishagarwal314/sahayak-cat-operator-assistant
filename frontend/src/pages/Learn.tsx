@@ -8,6 +8,7 @@ import { usePageIntro } from '../lib/usePageIntro'
 import type { GuideSummary } from '../lib/types'
 import { Pictogram } from '../components/Pictogram'
 import { PageHeader } from '../components/Simple'
+import { TeacherBooking } from '../components/TeacherBooking'
 
 const COLOR: Record<string, string> = {
   amber: 'bg-cat/15 text-cat border-cat/40',
@@ -23,8 +24,18 @@ export default function Learn() {
   const { speak, speakingId } = useVoiceOut()
   const { replay } = usePageIntro('learn', speak)
   const [guides, setGuides] = useState<GuideSummary[]>([])
+  const [family, setFamily] = useState('excavator')
 
   useEffect(() => { api.guides(machineId ?? undefined).then(setGuides).catch(() => undefined) }, [machineId])
+  useEffect(() => {
+    if (machineId) api.machine(machineId).then((d) => setFamily(d.machine.family)).catch(() => undefined)
+  }, [machineId])
+  // Arriving from "book a trainer": jump straight to the teachers.
+  useEffect(() => {
+    if (window.location.hash === '#teachers') {
+      window.setTimeout(() => document.getElementById('teachers')?.scrollIntoView({ behavior: 'smooth' }), 400)
+    }
+  }, [])
 
   return (
     <div className="space-y-5">
@@ -51,10 +62,7 @@ export default function Learn() {
         })}
       </div>
 
-      <button onClick={() => navigate('/pro/training')}
-        className="flex h-16 w-full items-center justify-center gap-3 rounded-2xl bg-ink-800 text-lg font-bold text-slate-200">
-        <Pictogram name="play" className="h-7 w-7 text-cat" />{lang === 'hi' ? 'वीडियो और टीचर' : 'Videos and trainers'}
-      </button>
+      <TeacherBooking family={family} />
     </div>
   )
 }

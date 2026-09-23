@@ -46,7 +46,7 @@ SHIFTS = ["day", "night"]
 SHIFT_FACTOR = {"day": 1.00, "night": 1.09}
 
 
-def gen_task_history(n: int = 420) -> list[dict]:
+def gen_task_history(n: int = 1500) -> list[dict]:
     rows: list[dict] = []
     start = datetime(2025, 2, 1, 7, 0)
     for i in range(n):
@@ -95,8 +95,16 @@ def gen_task_history(n: int = 420) -> list[dict]:
     return rows
 
 
-def gen_telemetry(days: int = 30) -> list[dict]:
-    """Hourly telemetry per machine, with a few deliberately anomalous stretches."""
+def gen_telemetry(days: int = 60) -> list[dict]:
+    """Hourly telemetry per machine, in the problem statement's schema.
+
+    Safety alerts are not random: they follow the causes a supervisor would
+    recognise, so a model trained on this has something real to learn.
+      * fatigue  - belt violations rise the longer someone works without a break
+      * heat     - above ~38 C, attention drops and engines run hot
+      * weather  - dust and rain raise proximity near-misses
+      * bad days - a careless day stays careless: earlier violations predict later ones
+    """
     rows: list[dict] = []
     for machine, meta in MACHINES.items():
         hours = meta["start_hours"]
@@ -104,11 +112,15 @@ def gen_telemetry(days: int = 30) -> list[dict]:
         operator = meta["operators"][0]
         day0 = datetime(2025, 5, 1, 7, 0)
         for d in range(days):
-            # every ~9th day this machine has a "bad" day: heavy idling, belt off
-            bad_day = (d + hash(machine) % 9) % 9 == 0
+            bad_day = RNG.random() < 0.14
+            took_break = RNG.random() < (0.45 if bad_day else 0.85)
+            weather = RNG.choices(WEATHER, weights=[0.35, 0.25, 0.10, 0.18, 0.12])[0]
+            heat_shift = {"hot": 7, "rain": -5, "overcast": -2, "dust": 3}.get(weather, 0)
             fuel_pct = RNG.uniform(70, 100)
+            violations = 0
             for h in range(9):  # 9 hour shift
                 ts = day0 + timedelta(days=d, hours=h)
+                minutes_since_break = (h - 4) * 60 if (took_break and h >= 5) else h * 60
                 working = RNG.random() > (0.42 if bad_day else 0.15)
                 idle_min = RNG.uniform(30, 55) if (bad_day and not working) else (
                     RNG.uniform(2, 12) if working else RNG.uniform(14, 30)
@@ -117,11 +129,16 @@ def gen_telemetry(days: int = 30) -> list[dict]:
                 fuel_used = round(RNG.uniform(4.0, 7.5) if working else RNG.uniform(1.2, 3.0), 1)
                 fuel_pct = max(6.0, fuel_pct - fuel_used / 4.1)
                 hours += 1.0
-                ambient = 24 + 12 * math.sin((h - 2) / 9 * math.pi) + RNG.uniform(-2, 2)
+                ambient = 24 + heat_shift + 12 * math.sin((h - 2) / 9 * math.pi) + RNG.uniform(-2, 2)
                 engine_temp = 82 + (ambient - 28) * 0.45 + (6 if cycles > 14 else 0) + RNG.uniform(-3, 4)
-                seatbelt = "Unfastened" if (bad_day and RNG.random() < 0.35) else "Fastened"
-                proximity = RNG.random() < (0.10 if bad_day else 0.03)
+
+                belt_risk = 0.02 + (0.30 if bad_day else 0) + max(0, minutes_since_break - 180) / 60 * 0.06 \
+                    + (0.06 if ambient > 38 else 0) + 0.08 * min(violations, 3)
+                seatbelt = "Unfastened" if RNG.random() < belt_risk else "Fastened"
+                prox_risk = 0.03 + (0.07 if bad_day else 0) + {"dust": 0.06, "rain": 0.04}.get(weather, 0)
+                proximity = RNG.random() < prox_risk
                 alert = seatbelt == "Unfastened" or idle_min > 45 or engine_temp > 103 or proximity
+                violations += int(alert)
 
                 row = {
                     "Timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"),
@@ -137,6 +154,10 @@ def gen_telemetry(days: int = 30) -> list[dict]:
                     "Engine Temp (C)": round(engine_temp, 1),
                     "Ambient Temp (C)": round(ambient, 1),
                     "Proximity Event": "Yes" if proximity else "No",
+                    "Weather": weather,
+                    "Hours Into Shift": h,
+                    "Minutes Since Break": minutes_since_break,
+                    "Alerts So Far Today": violations - int(alert),
                 }
                 if family == "excavator":
                     row["Hydraulic Temp (C)"] = round(engine_temp - 8 + RNG.uniform(-3, 7), 1)
@@ -151,6 +172,12 @@ def gen_telemetry(days: int = 30) -> list[dict]:
                     row["Track Tension (%)"] = round(RNG.uniform(55, 85), 1)
                     row["Undercarriage Wear (%)"] = round(48 + d * 0.15 + RNG.uniform(-1, 1), 1)
                 rows.append(row)
+            # Label each hour with whether the NEXT hour raised an alert - that is
+            # what the risk model learns to predict. The last hour has no next hour.
+            day_rows = rows[-9:]
+            for this, nxt in zip(day_rows, day_rows[1:]):
+                this["Safety Alert Next Hour"] = nxt["Safety Alert Triggered"]
+            day_rows[-1]["Safety Alert Next Hour"] = ""
     rows.sort(key=lambda r: (r["Timestamp"], r["Machine ID"]))
     return rows
 

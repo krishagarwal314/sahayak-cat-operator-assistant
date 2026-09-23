@@ -27,8 +27,8 @@ export const PAGE_INTROS = {
     en: 'This is your machine. Hear the safety points first. Tap the video to see how to operate it.',
   },
   learn: {
-    hi: 'यहाँ मशीन चलाना सीखिए। जो सीखना है उसकी तस्वीर दबाइए।',
-    en: 'Learn to use the machine here. Tap the picture of what you want to learn.',
+    hi: 'यहाँ मशीन चलाना सीखिए। तस्वीर दबाइए, या नीचे टीचर का समय बुक कीजिए।',
+    en: 'Learn to use the machine here. Tap a picture, or book a trainer below.',
   },
   guide: {
     hi: 'हर कदम ध्यान से सुनिए। आगे जाने के लिए हरा बटन दबाइए।',

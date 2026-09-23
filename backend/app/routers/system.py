@@ -24,6 +24,12 @@ def health() -> dict:
     }
 
 
+def _ml_metrics() -> dict:
+    from ..ml import safety_risk, task_time
+
+    return {"task_time": task_time.metrics(), "safety_risk": safety_risk.metrics()}
+
+
 @router.get("/models")
 def models() -> dict:
     """What is configured, what is actually loaded, and what failed to load."""
@@ -33,6 +39,7 @@ def models() -> dict:
         "tts": tts.info(),
         "translate": translate.info(),
         "face": face.info(),
+        "ml": _ml_metrics(),
         "taxonomy": taxonomy_stats(),
     }
 
