@@ -31,11 +31,13 @@ class AskRequest(BaseModel):
     intent: str | None = None
     language: str = "hi"
     speak: bool = False
+    slow: bool = False
 
 
 class SpeakRequest(BaseModel):
     text: str
     language: str = "hi"
+    slow: bool = False
 
 
 class TranslateRequest(BaseModel):

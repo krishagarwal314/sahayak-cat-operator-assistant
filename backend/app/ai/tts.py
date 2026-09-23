@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from ..config import settings
 from . import registry
 
-log = logging.getLogger("sahayak.tts")
+log = logging.getLogger("saathi.tts")
 
 _KEY = "tts"
 
@@ -88,12 +88,17 @@ def _to_wav_bytes(audio, sample_rate: int) -> bytes:
     return buffer.getvalue()
 
 
-def _synth_vits(bundle: dict, text: str):
+def _synth_vits(bundle: dict, text: str, rate: float):
     torch = bundle["torch"]
+    model = bundle["model"]
+    # VitsModel divides predicted durations by speaking_rate, so < 1.0 is slower.
+    model.speaking_rate = rate
     inputs = bundle["tokenizer"](text, return_tensors="pt")
+    if inputs["input_ids"].shape[-1] == 0:
+        return None, bundle["sample_rate"]
     inputs = {k: v.to(bundle["device"]) for k, v in inputs.items()}
     with torch.inference_mode():
-        output = bundle["model"](**inputs).waveform
+        output = model(**inputs).waveform
     return output.float().cpu().numpy().squeeze(), bundle["sample_rate"]
 
 
@@ -109,21 +114,58 @@ def _synth_indicf5(bundle: dict, text: str):
     return audio, 24000
 
 
-def synthesize(text: str, *, language: str = "hi") -> Speech | None:
-    """Render one line of Hindi (or English) to WAV bytes."""
-    text = (text or "").strip()
+def prepare(text: str, *, language: str = "hi", slow: bool = False) -> str:
+    """The exact string the model will be asked to read."""
+    if language != "hi":
+        return (text or "").strip()
+    from ..services.speech_text import to_speech
+
+    return to_speech(text, slow=slow)
+
+
+def synthesize(text: str, *, language: str = "hi", slow: bool = False) -> Speech | None:
+    """Render a reply to WAV bytes.
+
+    Hindi text is first rewritten into pure spoken Devanagari (MMS-TTS was
+    trained on nothing else, so digits, Latin letters and symbols were being
+    skipped or mangled). It is then synthesised one sentence at a time with a
+    real silence between sentences: VITS drifts and rushes on long inputs, and
+    the gaps give a listener time to take each point in before the next.
+    """
+    import numpy as np
+
+    from ..services.speech_text import phrases
+
+    text = prepare(text, language=language, slow=slow)
     if not text or not settings.enable_tts:
         return None
     bundle = registry.get(_KEY, _load)
     if bundle is None:
         return None
 
+    rate = settings.tts_slow_rate if slow else settings.tts_speaking_rate
+    gap_s = settings.tts_slow_sentence_gap if slow else settings.tts_sentence_gap
+
     started = time.perf_counter()
     try:
         if bundle["engine"] == "indicf5":
             audio, sample_rate = _synth_indicf5(bundle, text)
         else:
-            audio, sample_rate = _synth_vits(bundle, text)
+            chunks = []
+            sample_rate = bundle["sample_rate"]
+            long_gap = np.zeros(int(sample_rate * gap_s), dtype="float32")
+            short_gap = np.zeros(int(sample_rate * gap_s * 0.45), dtype="float32")
+            for phrase, pause in phrases(text) or [(text, "long")]:
+                wave, sample_rate = _synth_vits(bundle, phrase, rate)
+                if wave is None or not getattr(wave, "size", 0):
+                    continue
+                chunks.extend([
+                    np.asarray(wave, dtype="float32").reshape(-1),
+                    long_gap if pause == "long" else short_gap,
+                ])
+            if not chunks:
+                return None
+            audio = np.concatenate(chunks[:-1])
     except Exception as exc:  # noqa: BLE001 - never let TTS break a reply
         log.warning("tts synthesis failed: %s", exc)
         return None

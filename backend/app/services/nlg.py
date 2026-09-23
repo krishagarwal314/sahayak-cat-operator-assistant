@@ -518,7 +518,7 @@ def _training(ctx: dict) -> Reply:
     machine = db.machine(ctx["machine_id"])
     family = machine["family"] if machine else "all"
     modules = [m for m in db.TRAINING["modules"] if m["family"] in (family, "all")][:3]
-    titles_hi = "، ".join(m["title_hi"] for m in modules)
+    titles_hi = ", ".join(m["title_hi"] for m in modules)
     return Reply(
         text_hi=(f"इस मशीन के लिए {len(modules)} प्रशिक्षण मॉड्यूल उपलब्ध हैं: {titles_hi}। "
                  f"आप चाहें तो इंस्ट्रक्टर के साथ सत्र भी बुक कर सकते हैं।"),
@@ -553,7 +553,7 @@ def _switch_machine(ctx: dict, slots: dict) -> Reply:
     family = slots.get("machine")
     target = next((m for m in db.MACHINES if m["family"] == family), None)
     if not target:
-        names_hi = "، ".join(m["short_hi"] for m in db.MACHINES)
+        names_hi = ", ".join(m["short_hi"] for m in db.MACHINES)
         return Reply(
             text_hi=f"कौन सी मशीन चाहिए? उपलब्ध हैं: {names_hi}।",
             text_en=f"Which machine do you want? Available: {', '.join(m['model'] for m in db.MACHINES)}.",
@@ -612,7 +612,7 @@ def _unknown(ctx: dict, alternatives: list[dict]) -> Reply:
     suggestions = machine.get("quick_questions_hi", [])[:3]
     suggestions_en = machine.get("quick_questions_en", [])[:3]
     if alternatives:
-        labels_hi = "، ".join(
+        labels_hi = ", ".join(
             (INTENTS[a["intent"]].description if a["intent"] in INTENTS else a["intent"])
             for a in alternatives[:2]
         )

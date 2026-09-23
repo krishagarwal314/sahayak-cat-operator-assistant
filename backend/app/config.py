@@ -79,7 +79,7 @@ _P = PROFILES[MODEL_PROFILE]
 class Settings:
     """Runtime settings. Read once at import, overridable via env."""
 
-    app_name = "Sahayak - Smart Operator Assistant for CAT Machines"
+    app_name = "CAT Saathi - Smart Operator Companion for CAT Machines"
     version = "1.0.0"
 
     # ---- server ----
@@ -126,6 +126,15 @@ class Settings:
     # ---- audio ----
     sample_rate = 16000
     tts_sample_rate = int(_env("TTS_SAMPLE_RATE", "24000"))
+    # VITS speaking rate: 1.0 is the model's natural pace, lower is slower.
+    # Operators listen while working a machine, often with limited literacy,
+    # so the default is deliberately a little slower than natural, and the
+    # step-by-step machine guides slower still.
+    tts_speaking_rate = float(_env("TTS_SPEAKING_RATE", "0.88"))
+    tts_slow_rate = float(_env("TTS_SLOW_RATE", "0.74"))
+    # Silence inserted between sentences, in seconds.
+    tts_sentence_gap = float(_env("TTS_SENTENCE_GAP", "0.35"))
+    tts_slow_sentence_gap = float(_env("TTS_SLOW_SENTENCE_GAP", "0.7"))
     indicf5_ref_audio = _env("INDICF5_REF_AUDIO", str(BACKEND_DIR / "assets" / "ref_audio" / "hindi_ref.wav"))
     indicf5_ref_text = _env(
         "INDICF5_REF_TEXT",

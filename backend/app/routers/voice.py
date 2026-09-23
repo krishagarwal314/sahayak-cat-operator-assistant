@@ -56,6 +56,7 @@ async def voice_ask(
     machine_id: str = Form(...),
     language: str = Form("hi"),
     speak: bool = Form(True),
+    slow: bool = Form(False),
     operator: dict = Depends(security.current_operator),
 ) -> dict:
     """Full round trip, with a per-stage timing breakdown."""
@@ -102,7 +103,7 @@ async def voice_ask(
     if speak:
         spoken = result["reply"]["speech"].get(language) or result["reply"]["text"].get(language, "")
         started = time.perf_counter()
-        speech = tts.synthesize(spoken, language=language)
+        speech = tts.synthesize(spoken, language=language, slow=slow)
         timings["tts_ms"] = round((time.perf_counter() - started) * 1000, 1)
         if speech is not None:
             result["audio"] = {
@@ -114,7 +115,7 @@ async def voice_ask(
             }
         else:
             result["audio"] = None
-            result["speech_fallback_text"] = spoken
+            result["speech_fallback_text"] = tts.prepare(spoken, language=language, slow=slow)
 
     timings["total_ms"] = round(sum(timings.values()), 1)
     result["timings"] = timings
@@ -124,7 +125,7 @@ async def voice_ask(
 @router.post("/speak")
 def speak(payload: SpeakRequest, _: dict = Depends(security.current_operator)) -> Response:
     """Text to a WAV stream - used by the 'read my tasks aloud' button."""
-    speech = tts.synthesize(payload.text, language=payload.language)
+    speech = tts.synthesize(payload.text, language=payload.language, slow=payload.slow)
     if speech is None:
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE,

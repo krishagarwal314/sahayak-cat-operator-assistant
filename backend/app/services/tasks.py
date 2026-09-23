@@ -96,7 +96,7 @@ def briefing(operator_id: str) -> dict:
 
     tasks = for_operator(operator_id)
     machines = sorted({t["machine_id"] for t in tasks})
-    machine_names_hi = "، ".join(
+    machine_names_hi = ", ".join(
         (db.machine(m) or {}).get("name_hi", m) for m in machines
     )
     machine_names_en = ", ".join((db.machine(m) or {}).get("name_en", m) for m in machines)

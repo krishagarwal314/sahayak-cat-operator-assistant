@@ -12,14 +12,15 @@ from ..services import assistant as assistant_service
 router = APIRouter(prefix="/api/assistant", tags=["assistant"])
 
 
-def _attach_speech(result: dict, language: str) -> dict:
+def _attach_speech(result: dict, language: str, slow: bool = False) -> dict:
     """Render the reply to audio and inline it as base64."""
     spoken = result["reply"]["speech"].get(language) or result["reply"]["text"].get(language, "")
-    speech = tts.synthesize(spoken, language=language)
+    speech = tts.synthesize(spoken, language=language, slow=slow)
     if speech is None:
         result["audio"] = None
-        # The browser falls back to the Web Speech API using this text.
-        result["speech_fallback_text"] = spoken
+        # The browser falls back to the Web Speech API using this text, already
+        # rewritten into speakable Devanagari so the browser voice gets it right too.
+        result["speech_fallback_text"] = tts.prepare(spoken, language=language, slow=slow)
         return result
     result["audio"] = {
         "base64": base64.b64encode(speech.wav).decode("ascii"),
@@ -49,7 +50,7 @@ def ask(payload: AskRequest, operator: dict = Depends(security.current_operator)
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown machine")
 
     if payload.speak:
-        result = _attach_speech(result, payload.language)
+        result = _attach_speech(result, payload.language, payload.slow)
     return result
 
 
