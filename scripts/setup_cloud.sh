@@ -83,6 +83,12 @@ echo "    built -> frontend/dist"
 # ---------------------------------------------------------------- models
 if [[ "$SKIP_MODELS" -eq 0 ]]; then
   say "downloading models (profile: ${MODEL_PROFILE:-balanced})"
+  if [[ -z "${HF_TOKEN:-}${HUGGING_FACE_HUB_TOKEN:-}" ]]; then
+    echo "    HF_TOKEN is not set. IndicTrans2 is a gated repo and will be skipped."
+    echo "    Accept the terms, then re-run with HF_TOKEN=hf_... to enable it:"
+    echo "      https://huggingface.co/ai4bharat/indictrans2-en-indic-dist-200M"
+    echo "    Task text falls back to curated Hindi without it, so this is not fatal."
+  fi
   cd "$ROOT/backend"
   "$PY" scripts/download_models.py --profile "${MODEL_PROFILE:-balanced}"
 else

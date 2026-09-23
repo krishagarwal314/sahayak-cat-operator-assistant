@@ -15,6 +15,7 @@ project trains itself is the intent classifier:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
@@ -37,6 +38,13 @@ SIZES = {
     "intfloat/multilingual-e5-base": "1.1 GB",
     "ai4bharat/indic-bert": "0.14 GB",
     "google/muril-base-cased": "0.95 GB",
+}
+
+# Repos that require accepting terms on the Hub before they can be downloaded.
+# Approval is normally instant, but it does need an account and a token.
+GATED = {
+    "ai4bharat/indictrans2-en-indic-dist-200M",
+    "ai4bharat/indictrans2-en-indic-1B",
 }
 
 ROLE_NOTES = {
@@ -63,6 +71,13 @@ def _download(repo_id: str, role: str) -> bool:
         )
     except Exception as exc:  # noqa: BLE001
         print(f"        FAILED: {type(exc).__name__}: {exc}")
+        if repo_id in GATED or "gated" in str(exc).lower() or "401" in str(exc):
+            print(f"        This repo is gated. Accept the terms at")
+            print(f"          https://huggingface.co/{repo_id}")
+            print(f"        then create a read token and export it:")
+            print(f"          export HF_TOKEN=hf_...")
+            print(f"        Or use an ungated model instead:")
+            print(f"          export TRANSLATE_MODEL=facebook/nllb-200-distilled-600M")
         return False
     print(f"        done in {time.perf_counter() - started:.0f}s -> {path}")
     return True
@@ -86,7 +101,14 @@ def main() -> None:
         return
 
     print("\nIndicF5 also needs `pip install f5-tts`, and IndicTrans2 needs "
-          "`pip install IndicTransToolkit`.\n")
+          "`pip install IndicTransToolkit`.")
+    gated = [plan[r] for r in roles if plan[r] in GATED]
+    if gated and not (os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")):
+        print("\nNOTE: this profile includes a gated repo and HF_TOKEN is not set:")
+        for repo in gated:
+            print(f"  https://huggingface.co/{repo}  <- accept the terms there first")
+        print("  then: export HF_TOKEN=hf_...")
+    print()
 
     ok = failed = 0
     for role in roles:
