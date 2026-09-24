@@ -131,7 +131,12 @@ print('failed' if role in r['failed'] else ('loaded' if role in r['loaded'] else
 DEVICE=$(printf '%s' "$MODELS" | "$PY" -c "import sys,json; print(json.load(sys.stdin)['registry']['device'])" 2>/dev/null)
 if [[ "$DEVICE" == "cuda" ]]; then ok "running on the GPU"; else
   printf '  %s %s\n' "$(green '[--]')" "running on ${DEVICE:-cpu} (a GPU makes speech faster)"; fi
-check_model stt   "speech to text (Hindi)"   yes
+# The scripted demo mic needs no speech recognition; only require it when it is on.
+if [[ "${ENABLE_STT:-1}" == "0" ]]; then
+  printf '  %s %s\n' "$(green '[--]')" "speech to text switched off (scripted mic needs none)"
+else
+  check_model stt   "speech to text (Hindi)"   yes
+fi
 check_model tts   "text to speech (Hindi)"   yes
 check_model tts_en "text to speech (English)" yes
 check_model embedder "semantic intent matching" no
@@ -199,6 +204,7 @@ fi
 cat <<EOF
 
 $(bold 'NEXT:') expose port ${PORT} over HTTPS, then open it on your laptop.
+   On your own laptop: just open http://localhost:${PORT} (no tunnel needed)
    Lightning AI : Ports panel in the Studio -> add port ${PORT}
    anywhere else: cloudflared tunnel --url http://localhost:${PORT}
 
