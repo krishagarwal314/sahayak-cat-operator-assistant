@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from .. import db, security
 from ..schemas import SelectMachineRequest
-from ..services import anomaly, assistant, safety, signals as signal_service, site, telemetry, tasks as task_service
+from ..services import anomaly, assistant, coach as coach_service, safety, signals as signal_service, site, telemetry, tasks as task_service
 from ..services.speech_text import to_speech
 
 router = APIRouter(prefix="/api/machines", tags=["machines"])
@@ -143,6 +143,17 @@ def signals(machine_id: str, speak: bool = False, language: str = "hi",
         body["audio"] = ({"base64": base64.b64encode(speech.wav).decode("ascii"), "mime": speech.mime,
                           "sample_rate": speech.sample_rate, "duration_s": speech.duration_s,
                           "engine": speech.engine} if speech else None)
+    return body
+
+
+@router.get("/{machine_id}/coach")
+def coach(machine_id: str, operator: dict = Depends(security.current_operator)) -> dict:
+    """The safety-risk model asked "what if?" - a break, the seatbelt, an eased load."""
+    if db.machine(machine_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown machine")
+    body = coach_service.coach(machine_id, operator["id"])
+    if body is None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Safety-risk model not trained")
     return body
 
 

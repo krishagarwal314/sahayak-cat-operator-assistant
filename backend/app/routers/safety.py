@@ -53,3 +53,16 @@ def set_seatbelt(payload: SeatbeltRequest, _: dict = Depends(security.current_op
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown machine")
     telemetry.set_seatbelt(payload.machine_id, payload.fastened)
     return telemetry.snapshot(payload.machine_id)["sensors"]["seatbelt"]
+
+
+@router.post("/fatigue")
+def fatigue(payload: dict, operator: dict = Depends(security.current_operator)) -> dict:
+    """A fatigue sign the cab camera saw: eyes closed too long, or a yawn."""
+    kind = payload.get("kind")
+    if kind not in ("drowsy", "yawn"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "kind must be drowsy or yawn")
+    record = db.add_fatigue_event({
+        "operator_id": operator["id"], "machine_id": payload.get("machine_id"), "kind": kind,
+        "seconds": payload.get("seconds"), "perclos": payload.get("perclos"),
+    })
+    return {"event": record, "count": len(db.fatigue_events_for(operator["id"], payload.get("machine_id")))}

@@ -2,7 +2,7 @@ import type {
   AskResult, Briefing, MachineCard, MachineDetail, Operator,
   SafetyReport, Suggestion, Task, Telemetry, TrainingModule, Instructor,
   FaceStatus, FaceLoginResult, FaceEnrollResult, SessionResult, GuideSummary, Guide,
-  ManagerOptions, ManagerOverview, TaskDraft, Estimate, MachineAbout, Signals,
+  ManagerOptions, ManagerOverview, TaskDraft, Estimate, MachineAbout, Signals, Coach,
 } from './types'
 
 const TOKEN_KEY = 'sahayak.token'
@@ -171,6 +171,10 @@ export const api = {
 
   signals: (machineId: string, speak = false, language = 'hi') =>
     request<Signals>(`/api/machines/${machineId}/signals?speak=${speak}&language=${language}`),
+
+  coach: (machineId: string) => request<Coach>(`/api/machines/${machineId}/coach`),
+  fatigue: (body: { machine_id: string; kind: 'drowsy' | 'yawn'; seconds?: number; perclos?: number }) =>
+    request<{ count: number }>('/api/safety/fatigue', { method: 'POST', ...json(body) }),
 
   // ---- guides ----
   guides: (machineId?: string) =>

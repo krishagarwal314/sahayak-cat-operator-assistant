@@ -17,6 +17,7 @@ import { useSession } from '../lib/session'
 import { useVoiceOut } from '../lib/speechContext'
 import { useVoice } from '../lib/useVoice'
 import type { AskResult } from '../lib/types'
+import { GuardProvider } from './Guard'
 import { MachineIcon } from './MachineIcon'
 import { INTENT_ICON, Pictogram } from './Pictogram'
 import { setViewMode, VIEW_HOME } from '../lib/viewMode'
@@ -341,6 +342,7 @@ export function SimpleShell({ children }: { children: React.ReactNode }) {
   }, [lang, machineId, show])
 
   return (
+    <GuardProvider>
     <AnswerContext.Provider value={{ askIntent, show, busy }}>
       <div className="min-h-screen pb-44">
         <TopBar />
@@ -350,5 +352,6 @@ export function SimpleShell({ children }: { children: React.ReactNode }) {
         <BottomNav family={family} />
       </div>
     </AnswerContext.Provider>
+    </GuardProvider>
   )
 }

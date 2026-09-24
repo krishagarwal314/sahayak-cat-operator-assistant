@@ -34,6 +34,14 @@ export const PAGE_INTROS = {
     hi: 'यह आपकी मशीन की रिपोर्ट है। लाल कार्ड पहले दबाकर सुनिए।',
     en: 'This is your machine report. Tap the red cards first to hear them.',
   },
+  guard: {
+    hi: 'यह केबिन गार्ड है। हरा बटन दबाइए, कैमरा आपकी आँखों पर नज़र रखेगा। नींद आई तो अलार्म बजेगा।',
+    en: 'This is the cab guard. Press the green button and the camera will watch your eyes. If you doze off, the alarm sounds.',
+  },
+  live: {
+    hi: 'यह आपकी मशीन का लाइव हाल है। मशीन के किसी हिस्से को दबाइए। नीचे रडार पर मशीन के पास के लोग दिखते हैं।',
+    en: 'This is your machine, live. Tap any part of it. The radar below shows people near the machine.',
+  },
   guide: {
     hi: 'हर कदम ध्यान से सुनिए। आगे जाने के लिए हरा बटन दबाइए।',
     en: 'Listen to each step. Press the green button to go on.',
