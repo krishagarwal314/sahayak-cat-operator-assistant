@@ -19,7 +19,8 @@ for c in python3.12 python3.11 python3.10 python3; do
   fi
 done
 if [[ -z "$PY" ]]; then
-  echo "Python 3.10, 3.11 or 3.12 is needed. On a Mac:  brew install python@3.11"
+  echo "Python 3.10, 3.11 or 3.12 is needed."
+  echo "Double-click mac-offline/python-3.12.7-macos11.pkg to install it (no internet needed), then run this again."
   exit 1
 fi
 
@@ -30,8 +31,14 @@ if [[ ! -x "$VENV/bin/python" ]]; then
 fi
 if [[ ! -f "$VENV/.installed" || requirements-offline.txt -nt "$VENV/.installed" ]]; then
   echo "==> installing packages (one time, ~130 MB)"
-  "$VENV/bin/pip" install -q -U pip
-  "$VENV/bin/pip" install -q -r requirements-offline.txt && touch "$VENV/.installed"
+  WHEELS="$ROOT/mac-offline/wheels"
+  if [[ -d "$WHEELS" ]] && ls "$WHEELS"/*.whl >/dev/null 2>&1; then
+    # Bundled packages: no internet needed.
+    "$VENV/bin/pip" install -q --no-index --find-links "$WHEELS" -r requirements-offline.txt && touch "$VENV/.installed"
+  else
+    "$VENV/bin/pip" install -q -U pip
+    "$VENV/bin/pip" install -q -r requirements-offline.txt && touch "$VENV/.installed"
+  fi
 fi
 
 # Start every demo from the same task list, so the spoken briefing matches.
