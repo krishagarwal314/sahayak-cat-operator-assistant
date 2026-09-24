@@ -42,6 +42,7 @@ class Speech:
     engine: str
     model: str
     cached: bool = False
+    mime: str = "audio/wav"
 
 
 # --------------------------------------------------------------------------
@@ -78,16 +79,23 @@ def _cached(key: str, language: str) -> Speech | None:
             _MEMORY.move_to_end(key)
             _STATS["hits"] += 1
             return hit
+    # Compressed recordings (the offline demo ships these) first, then WAV.
+    mp3 = settings.tts_cache_dir / f"{key}.mp3"
     path = settings.tts_cache_dir / f"{key}.wav"
-    if not path.exists():
-        return None
     try:
-        import soundfile as sf
+        if mp3.exists():
+            speech = Speech(wav=mp3.read_bytes(), sample_rate=0, duration_s=0.0, latency_ms=0.0,
+                            engine="vits", model=_model_for(language), cached=True, mime="audio/mpeg")
+        elif path.exists():
+            import wave
 
-        wav = path.read_bytes()
-        info_ = sf.info(io.BytesIO(wav))
-        speech = Speech(wav=wav, sample_rate=info_.samplerate, duration_s=round(info_.duration, 2),
-                        latency_ms=0.0, engine="cache", model=_model_for(language), cached=True)
+            data = path.read_bytes()
+            with wave.open(io.BytesIO(data)) as w:
+                rate, frames = w.getframerate(), w.getnframes()
+            speech = Speech(wav=data, sample_rate=rate, duration_s=round(frames / rate, 2) if rate else 0.0,
+                            latency_ms=0.0, engine="vits", model=_model_for(language), cached=True)
+        else:
+            return None
     except Exception:  # noqa: BLE001 - a bad file is just a miss
         return None
     _STATS["disk_hits"] += 1
@@ -107,7 +115,8 @@ def _store(key: str, speech: Speech) -> None:
 
 
 def cache_stats() -> dict:
-    files = list(settings.tts_cache_dir.glob("*.wav")) if settings.tts_cache_dir.exists() else []
+    files = ([*settings.tts_cache_dir.glob("*.wav"), *settings.tts_cache_dir.glob("*.mp3")]
+             if settings.tts_cache_dir.exists() else [])
     return {**_STATS, "memory_items": len(_MEMORY), "disk_items": len(files),
             "disk_mb": round(sum(f.stat().st_size for f in files) / 1e6, 1)}
 
@@ -250,6 +259,17 @@ def synthesize(text: str, *, language: str = "hi", slow: bool = False) -> Speech
     hit = _cached(key, language)
     if hit is not None:
         return hit
+    if settings.tts_cache_only:
+        # No recording for this sentence: note it (so it can be recorded next
+        # time) and let the browser speak it.
+        _STATS["misses"] += 1
+        try:
+            settings.tts_cache_dir.mkdir(parents=True, exist_ok=True)
+            with (settings.tts_cache_dir / "missing.txt").open("a", encoding="utf-8") as fh:
+                fh.write(f"{language}\t{int(slow)}\t{text}\n")
+        except OSError:
+            pass
+        return None
     bundle = registry.get(_KEYS[language], _loader(language))
     if bundle is None:
         return None

@@ -161,6 +161,11 @@ class Settings:
     # At startup, speak every guide step, safety rule and page intro once in
     # the background so the first tap on them is instant.
     warm_tts_cache = _flag("WARM_TTS_CACHE", True)
+    # Offline demo: speak only from recorded clips, never load a voice model.
+    # A sentence with no recording is left to the browser's own voice.
+    tts_cache_only = _flag("TTS_CACHE_ONLY", False)
+    # Offline demo: freeze the clock (ISO time) so every answer is repeatable.
+    demo_time = _env("DEMO_TIME", "")
     # English voice used if espeak / phonemizer is not installed.
     tts_model_en_fallback = _env("TTS_MODEL_EN_FALLBACK", "facebook/mms-tts-eng")
     indicf5_ref_audio = _env("INDICF5_REF_AUDIO", str(BACKEND_DIR / "assets" / "ref_audio" / "hindi_ref.wav"))

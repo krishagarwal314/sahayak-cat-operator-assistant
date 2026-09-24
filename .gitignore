@@ -2,19 +2,23 @@
 __pycache__/
 *.py[cod]
 .venv/
+.venv-offline/
 venv/
 *.egg-info/
 .pytest_cache/
 
 # models and generated artefacts
-backend/models/
+# offline-demo branch: the face and small ML models ship with the code
+backend/models/*
+!backend/models/face/
+!backend/models/ml/
 backend/data/
 backend/assets/ref_audio/*.wav
 !backend/assets/ref_audio/.gitkeep
 
 # node
 node_modules/
-frontend/dist/
+# offline-demo branch: the web app ships prebuilt
 .vite/
 
 # env and editors
@@ -36,3 +40,5 @@ frontend/tsconfig.tsbuildinfo
 # trained model archives - never commit these
 *.zip
 backend/cache/
+backend/voices/*.wav
+backend/voices/missing.txt

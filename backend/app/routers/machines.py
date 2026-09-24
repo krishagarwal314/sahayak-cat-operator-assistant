@@ -140,7 +140,7 @@ def signals(machine_id: str, speak: bool = False, language: str = "hi",
                if x["level"] != "ok" and x["say"][lang] != body["headline"][lang]][:2]
         body["summary"] = {lang: " ".join([body["headline"][lang], *top])}
         speech = tts.synthesize(body["summary"][lang], language=lang)
-        body["audio"] = ({"base64": base64.b64encode(speech.wav).decode("ascii"), "mime": "audio/wav",
+        body["audio"] = ({"base64": base64.b64encode(speech.wav).decode("ascii"), "mime": speech.mime,
                           "sample_rate": speech.sample_rate, "duration_s": speech.duration_s,
                           "engine": speech.engine} if speech else None)
     return body

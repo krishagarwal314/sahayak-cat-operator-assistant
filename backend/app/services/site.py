@@ -11,6 +11,7 @@ import random
 from datetime import datetime
 
 from . import telemetry
+from .. import clock
 
 WEATHER_HI = {
     "clear": "साफ़ मौसम", "hot": "तेज़ गर्मी", "rain": "बारिश",
@@ -40,7 +41,7 @@ def _rng(now: datetime) -> random.Random:
 
 
 def conditions(machine_id: str | None = None, now: datetime | None = None) -> dict:
-    now = now or datetime.now()
+    now = now or clock.now()
     rng = _rng(now)
     weather = rng.choices(
         ["clear", "hot", "overcast", "dust", "rain"], weights=[0.34, 0.26, 0.18, 0.14, 0.08]

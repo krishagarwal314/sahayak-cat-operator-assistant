@@ -108,7 +108,7 @@ async def voice_ask(
         if speech is not None:
             result["audio"] = {
                 "base64": base64.b64encode(speech.wav).decode("ascii"),
-                "mime": "audio/wav",
+                "mime": speech.mime,
                 "sample_rate": speech.sample_rate,
                 "duration_s": speech.duration_s,
                 "engine": speech.engine,
@@ -133,7 +133,7 @@ def speak(payload: SpeakRequest, _: dict = Depends(security.current_operator)) -
         )
     return Response(
         content=speech.wav,
-        media_type="audio/wav",
+        media_type=speech.mime,
         headers={
             "X-TTS-Engine": speech.engine,
             "X-TTS-Latency-Ms": str(speech.latency_ms),

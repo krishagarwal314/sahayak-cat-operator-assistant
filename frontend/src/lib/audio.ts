@@ -211,8 +211,10 @@ function playUrl(url: string): Promise<PlayResult> {
   })
 }
 
-export function playBase64(base64: string, mime = 'audio/wav'): Promise<PlayResult> {
-  return playUrl(URL.createObjectURL(base64ToBlob(base64, mime)))
+export function playBase64(base64: string, mime?: string): Promise<PlayResult> {
+  // Recorded clips are MP3 ("ID3" header or an MPEG frame), fresh ones WAV.
+  const type = mime ?? (base64.startsWith('SUQz') || base64.startsWith('//') ? 'audio/mpeg' : 'audio/wav')
+  return playUrl(URL.createObjectURL(base64ToBlob(base64, type)))
 }
 
 export function playBlob(blob: Blob): Promise<PlayResult> {

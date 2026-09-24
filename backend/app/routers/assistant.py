@@ -24,7 +24,7 @@ def _attach_speech(result: dict, language: str, slow: bool = False) -> dict:
         return result
     result["audio"] = {
         "base64": base64.b64encode(speech.wav).decode("ascii"),
-        "mime": "audio/wav",
+        "mime": speech.mime,
         "sample_rate": speech.sample_rate,
         "duration_s": speech.duration_s,
         "latency_ms": speech.latency_ms,

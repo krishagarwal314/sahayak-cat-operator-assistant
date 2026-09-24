@@ -15,10 +15,12 @@ from __future__ import annotations
 
 import math
 import random
+import zlib
 from dataclasses import dataclass
 from datetime import datetime, time as dtime
 
 from .. import db
+from .. import clock
 
 SHIFT_START = dtime(7, 0)
 SHIFT_MINUTES = 9 * 60
@@ -103,7 +105,7 @@ class Reading:
 
 def shift_elapsed_minutes(now: datetime | None = None) -> float:
     """Minutes into the shift, clamped so an evening demo still looks sensible."""
-    now = now or datetime.now()
+    now = now or clock.now()
     start = datetime.combine(now.date(), SHIFT_START)
     elapsed = (now - start).total_seconds() / 60.0
     if elapsed < 0:
@@ -155,7 +157,7 @@ def seatbelt_state(machine_id: str, elapsed: float) -> bool:
 
 
 def proximity_objects(machine_id: str, elapsed: float) -> int:
-    rng = random.Random(int(elapsed // 2) ^ hash(machine_id))
+    rng = random.Random(int(elapsed // 2) ^ zlib.crc32(machine_id.encode()))
     roll = rng.random()
     if machine_id == "LDR001" and roll < 0.22:
         return 1
@@ -168,7 +170,7 @@ def snapshot(machine_id: str, now: datetime | None = None) -> dict:
     if machine is None:
         raise KeyError(machine_id)
 
-    now = now or datetime.now()
+    now = now or clock.now()
     elapsed = shift_elapsed_minutes(now)
     readings: dict[str, Reading] = {}
 
@@ -275,7 +277,7 @@ def set_seatbelt(machine_id: str, fastened: bool) -> None:
 
 def recent_series(machine_id: str, key: str, points: int = 24, now: datetime | None = None) -> list[dict]:
     """A short trailing window of one sensor, for the dashboard sparklines."""
-    now = now or datetime.now()
+    now = now or clock.now()
     elapsed = shift_elapsed_minutes(now)
     step = max(1.0, elapsed / points) if elapsed > points else 1.0
     series: list[dict] = []

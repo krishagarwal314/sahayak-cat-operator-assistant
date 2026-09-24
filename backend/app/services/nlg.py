@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 from .. import db
 from ..ai.intent.taxonomy import INTENTS
 from . import anomaly, estimator, safety, site, telemetry
+from .. import clock
 
 # --------------------------------------------------------------------------
 # speech friendly units
@@ -372,7 +373,7 @@ def _task_estimate(ctx: dict) -> Reply:
     progress = estimator.progress_of(current, machine_id)
     est = estimator.estimate(current, machine_id=machine_id, operator_id=operator_id, progress=progress)
     remaining = est["remaining_minutes"]
-    finish = (datetime.now() + timedelta(minutes=remaining)).strftime("%H:%M")
+    finish = (clock.now() + timedelta(minutes=remaining)).strftime("%H:%M")
 
     duration_hi, duration_en = _duration(remaining)
 
@@ -568,7 +569,7 @@ def _switch_machine(ctx: dict, slots: dict) -> Reply:
 def _greeting(ctx: dict) -> Reply:
     operator = db.operator(ctx["operator_id"]) or {}
     machine = db.machine(ctx["machine_id"]) or {}
-    hour = datetime.now().hour
+    hour = clock.now().hour
     greet_hi = "सुप्रभात" if hour < 12 else ("नमस्ते" if hour < 17 else "शुभ संध्या")
     greet_en = "Good morning" if hour < 12 else ("Hello" if hour < 17 else "Good evening")
     return Reply(
