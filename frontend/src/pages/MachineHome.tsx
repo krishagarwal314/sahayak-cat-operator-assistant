@@ -245,6 +245,20 @@ function MachineView({ onChange }: { onChange: () => void }) {
         </button>
       </div>
 
+      {/* live machine and cab guard */}
+      <div className="grid grid-cols-2 gap-3">
+        <button onClick={() => navigate('/live')}
+          className="flex h-24 items-center justify-center gap-3 rounded-[28px] border-2 border-cat/60 bg-cat/10 text-white active:scale-95">
+          <Pictogram name="proximity" className="h-11 w-11 text-cat" />
+          <span className={`text-lg font-extrabold leading-tight ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('लाइव मशीन', 'Live machine')}</span>
+        </button>
+        <button onClick={() => navigate('/guard')}
+          className="flex h-24 items-center justify-center gap-3 rounded-[28px] border-2 border-ok/60 bg-ok/10 text-white active:scale-95">
+          <Pictogram name="face" className="h-11 w-11 text-ok" />
+          <span className={`text-lg font-extrabold leading-tight ${lang === 'hi' ? 'lang-hi' : ''}`}>{t('केबिन गार्ड', 'Cab guard')}</span>
+        </button>
+      </div>
+
       {/* 3. four readings - tap one to hear it */}
       <div className="grid grid-cols-2 gap-3">
         {tiles.map((reading) => {

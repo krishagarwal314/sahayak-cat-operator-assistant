@@ -27,6 +27,7 @@ MODELS = {
     "unusual": {"name": "Unusual-use model", "arch": "IsolationForest · 300 trees + Huber fuel fit"},
     "time": {"name": "Task-time model", "arch": "GradientBoostingRegressor + 7%/93% quantile models"},
     "trend": {"name": "Trend forecast", "arch": "Least-squares trend on the last 30 minutes"},
+    "camera": {"name": "Cab guard", "arch": "MediaPipe Face Landmarker · 478 points + blendshapes, on device"},
 }
 
 
@@ -43,10 +44,14 @@ def _signal(key, icon, level, model, title, value, say):
 # the demo scenario: Suresh Yadav, CAT 320 excavator, a hot dusty afternoon
 # --------------------------------------------------------------------------
 def _demo() -> dict:
+    from . import coach
+
     s = _signal
+    # The risk percentage is the real model's prediction for this scenario.
+    pct = (coach.coach("EXC001", "OP1002") or {}).get("percent", 61)
     signals = [
         s("risk", "shield", "danger", "risk",
-          ("अगले घंटे ख़तरा", "Risk next hour"), ("ज़्यादा · 68%", "High · 68%"),
+          ("अगले घंटे ख़तरा", "Risk next hour"), (f"ज़्यादा · {pct}%", f"High · {pct}%"),
           ("अगले एक घंटे में ख़तरे की संभावना ज़्यादा है। दस मिनट आराम कीजिए, फिर सीट बेल्ट लगाकर काम शुरू कीजिए।",
            "The chance of a safety problem in the next hour is high. Rest ten minutes, then fasten your seatbelt and continue.")),
         s("fatigue", "clock", "danger", "risk",
@@ -182,6 +187,17 @@ def signals(machine_id: str, operator_id: str | None) -> dict:
     machine = db.machine(machine_id)
     operator = db.operator(operator_id) if operator_id else None
     body = _demo() if is_demo(machine_id, operator_id) else _live(machine_id, operator_id)
+    drowsy = [e for e in db.fatigue_events_for(operator_id, machine_id) if e.get("kind") == "drowsy"]
+    yawns = [e for e in db.fatigue_events_for(operator_id, machine_id) if e.get("kind") == "yawn"]
+    if drowsy or yawns:
+        n = len(drowsy)
+        body["signals"].insert(0, _signal(
+            "drowsy", "face", "danger" if drowsy else "warn", "camera",
+            ("नींद के संकेत", "Signs of sleep"),
+            (f"आँखें {n} बार बंद" if drowsy else f"{len(yawns)} बार उबासी", f"Eyes closed {n}x" if drowsy else f"Yawned {len(yawns)}x"),
+            ("कैमरे ने देखा कि आपकी आँखें बंद हो रही थीं। मशीन रोकिए और आराम कीजिए।",
+             "The camera saw your eyes closing. Stop the machine and rest.") if drowsy else
+            ("आप बार बार उबासी ले रहे हैं। थोड़ा आराम कीजिए।", "You keep yawning. Take a short rest.")))
     order = {"danger": 0, "warn": 1, "ok": 2}
     body["signals"].sort(key=lambda x: order[x["level"]])
     return {

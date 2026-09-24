@@ -69,6 +69,8 @@ def save_tasks() -> None:
         tmp.write_text(json.dumps(TASKS, ensure_ascii=False, indent=1), encoding="utf-8")
         tmp.replace(TASKS_FILE)
 INCIDENTS: list[dict] = []
+# Camera-detected fatigue: drowsiness (eyes closed) and yawning, from the cab guard.
+FATIGUE_EVENTS: list[dict] = []
 BOOKINGS: list[dict] = []
 CONVERSATIONS: dict[str, list[dict]] = {}
 SESSIONS: dict[str, dict] = {}          # operator_id -> {machine_id, started_at}
@@ -195,6 +197,20 @@ def add_incident(record: dict) -> dict:
         record.setdefault("created_at", datetime.now().isoformat(timespec="seconds"))
         INCIDENTS.append(record)
         return record
+
+
+def add_fatigue_event(record: dict) -> dict:
+    with _LOCK:
+        record.setdefault("id", f"FAT-{len(FATIGUE_EVENTS) + 1:04d}")
+        record.setdefault("created_at", datetime.now().isoformat(timespec="seconds"))
+        FATIGUE_EVENTS.append(record)
+        return record
+
+
+def fatigue_events_for(operator_id: str | None = None, machine_id: str | None = None) -> list[dict]:
+    return [e for e in FATIGUE_EVENTS
+            if (operator_id is None or e.get("operator_id") == operator_id)
+            and (machine_id is None or e.get("machine_id") == machine_id)]
 
 
 def incidents_for(operator_id: str | None = None, machine_id: str | None = None) -> list[dict]:

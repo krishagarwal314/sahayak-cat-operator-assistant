@@ -12,6 +12,7 @@ Download the models when you want the full voice experience:
 from __future__ import annotations
 
 import logging
+import mimetypes
 import time
 
 from fastapi import FastAPI, HTTPException, Request
@@ -86,6 +87,9 @@ def api_root() -> dict:
 # built, so `npm run dev` on :5173 with its proxy still works for development.
 # ---------------------------------------------------------------------------
 FRONTEND_DIST = REPO_DIR / "frontend" / "dist"
+# The cab guard's on-device vision model runs as WebAssembly; browsers only
+# stream-compile it when it is served with this type.
+mimetypes.add_type("application/wasm", ".wasm")
 
 if (FRONTEND_DIST / "index.html").is_file():
     if (FRONTEND_DIST / "assets").is_dir():

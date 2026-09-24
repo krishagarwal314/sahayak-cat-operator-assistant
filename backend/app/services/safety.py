@@ -132,13 +132,8 @@ def log_incident(*, operator_id: str, machine_id: str, description: str,
 # ---------------------------------------------------------------------------
 # Extra safety for every machine: predicted risk, working conditions, fatigue
 # ---------------------------------------------------------------------------
-def extra_warnings(machine_id: str, operator_id: str | None = None) -> list[dict]:
-    """Warnings beyond the live sensors, most important first.
-
-    Each one is {key, icon, severity: crit|warn, hi, en} - the same shape the
-    machine page already shows and speaks, so they need no new screen.
-    """
-    from ..ml import safety_risk
+def risk_features(machine_id: str, operator_id: str | None = None) -> tuple[dict, dict, float]:
+    """The safety-risk model's inputs for this machine right now, plus site conditions."""
     from . import site
 
     snap = telemetry.snapshot(machine_id)
@@ -148,7 +143,6 @@ def extra_warnings(machine_id: str, operator_id: str | None = None) -> list[dict
     # Breaks are not tracked by a sensor, so assume the scheduled one after
     # four hours; anything longer than three hours since then is fatigue.
     minutes_since_break = elapsed - 270 if elapsed > 270 else elapsed
-    out: list[dict] = []
 
     def num(key: str, default: float = 0.0) -> float:
         value = sensors.get(key, {}).get("value")
@@ -161,8 +155,23 @@ def extra_warnings(machine_id: str, operator_id: str | None = None) -> list[dict
         "load_cycles": num("load_cycles") / max(1, elapsed / 60), "engine_temp_c": num("engine_temp_c", 90),
         "belt_off": float(sensors.get("seatbelt", {}).get("value") == "Unfastened"),
         "proximity": float(num("proximity_objects") > 0),
-        "alerts_today": float(len(db.incidents_for(operator_id, machine_id))),
+        "alerts_today": float(len(db.incidents_for(operator_id, machine_id))
+                              + len(db.fatigue_events_for(operator_id, machine_id))),
     }
+    return features, conditions, minutes_since_break
+
+
+def extra_warnings(machine_id: str, operator_id: str | None = None) -> list[dict]:
+    """Warnings beyond the live sensors, most important first.
+
+    Each one is {key, icon, severity: crit|warn, hi, en} - the same shape the
+    machine page already shows and speaks, so they need no new screen.
+    """
+    from ..ml import safety_risk
+    from . import site
+
+    features, conditions, minutes_since_break = risk_features(machine_id, operator_id)
+    out: list[dict] = []
     risk = safety_risk.predict(features)
     if risk and risk["level"] != "low":
         pct = round(risk["probability"] * 100)

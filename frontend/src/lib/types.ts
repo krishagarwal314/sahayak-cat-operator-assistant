@@ -443,3 +443,12 @@ export interface Signals {
   summary?: Partial<Record<'hi' | 'en', string>>
   audio?: { base64: string; mime: string; sample_rate: number; duration_s: number; engine: string } | null
 }
+
+export interface Coach {
+  model: ModelTag
+  percent: number
+  forecast: { minutes: number; percent: number }
+  actions: { key: string; icon: string; hi: string; en: string; alone: number }[]
+  combos: Record<string, { percent: number; say: { hi: string; en: string } }>
+  fatigue_events: number
+}
