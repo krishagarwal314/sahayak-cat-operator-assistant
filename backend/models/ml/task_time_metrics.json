@@ -1,0 +1,11 @@
+{
+ "model": "gradient boosting, minutes per unit, with 7th/93rd percentile models",
+ "trained_on_jobs": 1500,
+ "test_jobs": 300,
+ "mae_minutes": 10.2,
+ "mape_pct": 5.6,
+ "baseline_mae_minutes": 24.4,
+ "improvement_vs_baseline_pct": 58.1,
+ "range_coverage_pct": 79.0,
+ "baseline": "median pace per job type, ignoring conditions and operator"
+}

@@ -1,0 +1,13 @@
+{
+ "model": "gradient boosting classifier, next-hour safety alert",
+ "train_hours": 1152,
+ "test_hours": 288,
+ "test_days": 12,
+ "split": "by day - the model is tested on days it never saw",
+ "auc": 0.818,
+ "baseline_auc": 0.637,
+ "baseline": "an alert now predicts an alert next hour",
+ "base_rate_pct": 24.0,
+ "precision_at_0.4_pct": 60.8,
+ "recall_at_0.4_pct": 44.9
+}

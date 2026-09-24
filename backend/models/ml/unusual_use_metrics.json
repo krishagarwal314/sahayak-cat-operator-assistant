@@ -1,0 +1,20 @@
+{
+ "model": "isolation forest per machine family, unsupervised",
+ "hours": 1620,
+ "misuse_hours": 78,
+ "split": "5 folds by day - every hour is scored by a model that never saw its day",
+ "flag_rate_pct": 5.0,
+ "auc": 0.991,
+ "baseline_auc": 0.857,
+ "baseline": "per-column thresholds on fuel, cycles, idling and engine temperature",
+ "precision_pct": 72.8,
+ "recall_pct": 75.6,
+ "baseline_precision_pct": 20.5,
+ "baseline_recall_pct": 21.8,
+ "recall_by_kind_pct": {
+  "fuel_loss": 75.0,
+  "idle_burn": 100.0,
+  "no_work_run": 50.0,
+  "overworking": 90.0
+ }
+}
